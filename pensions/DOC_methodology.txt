@@ -1,0 +1,6 @@
+Explanation of methodology as of July 28th for DOC pensions.
+The DOC pension data is misclassified in a serious way that I hadn't seen before at this point in the project.
+The yearly pension payments I could find are quite low, around 11 million a year 2011-2019. Compare to state police,
+which has a budget around 2/3rds as big but 99-130 mil per year in pension payments from 2016-2020.
+But there are 160 million dollars in pension payments to DOC employees all in 2020. So I took the % of total pension costs
+(not counting that lump sum obviously) per year from 2011-2020 and split the lump sum according to those proportions. 
