@@ -61,14 +61,23 @@ def suffolk_correction():
 
     correction_series = pd.Series()
     for y in list(range(2016, 2020)):
-        little = df.loc[:, df.columns.str.contains(str(y))]
-        s = little.sum(axis=1)
+        prev = df.loc[:, (df.columns.str.contains(str(y-1)) & df.columns.str.contains("Q3|Q4"))]
+        current = df.loc[:, (df.columns.str.contains(str(y)) & df.columns.str.contains("Q1|Q2"))]
+        s = prev.sum(axis=1) + current.sum(axis=1)
         correction_series.loc[y] = s[0] / s[1]
+    print("raw data:")
+    display(df)
+    print("correction by FY:")
+    display(correction_series)
     return correction_series
 
 def get_suffolk_correction_df():
     """Written on Sept 3 so we can get just df out of code for narrative tab of dashboard"""
     df = pd.DataFrame()
+    df.loc["Suffolk Admits", "2015 Q3"] = 50
+    df.loc["Total Admits", "2015 Q3"] = 391
+    df.loc["Suffolk Admits", "2015 Q4"] = 81
+    df.loc["Total Admits", "2015 Q4"] = 437
     df.loc["Suffolk Admits", "2016 Q1"] = 72
     df.loc["Total Admits", "2016 Q1"] = 439
     df.loc["Suffolk Admits", "2016 Q2"] = 79
