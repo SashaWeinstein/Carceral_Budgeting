@@ -16,12 +16,14 @@ def Boston_total_earnings():
     boston_earnings_2019[to_float_cols] = boston_earnings_2019[to_float_cols].applymap(string_to_float(2019))
     boston_earnings_2019["year"] = 2019
     boston_earnings = boston_earnings_2019
-    for year in (2018, 2017, 2016):
+    for year in (2018, 2017, 2016, 2015):
         path = big_path + "BostonPD/Boston_Earnings_" + str(year) + ".csv"
         earnings = pd.read_csv(path, engine="python")
         earnings["year"] = year
         if year == 2017:
             earnings.rename(columns={"DEPARTMENT NAME": "DEPARTMENT_NAME"}, inplace=True)
+        if year == 2015:
+            earnings.rename(columns={"DETAILS":"DETAIL"}, inplace=True)
         earnings[to_float_cols] = earnings[to_float_cols].applymap(string_to_float(year))
         boston_earnings = boston_earnings.append(earnings)
     boston_earnings = boston_earnings.rename(columns={"DEPARTMENT_NAME": "department"})
@@ -69,14 +71,35 @@ def True_Earnings(agency_alias):
         return total_earnings, PD_fraction_non_teacher, PD_fraction_total, PD_payroll
 
 def PD_Fraction_of_Total(total_earnings, year_col, city, dept_name, earnings_col):
-    """Code from BostonPD_Fraction_of_Total from Boston_Earnings made generalizable"""
-
+    """Methodology for Chelsea is pretty confusing. For Chelsea we have 2016 FY data and calendar year payroll data
+    for 2017, 2018, 2019. So Methodology is to use FY16 payroll data for 2016, 2017 calendar year data only for FY 2017,
+    and usual methodology for 2018 and 2019"""
+    if city == "Boston":
+        yr = list(range(2016, 2020))
+    elif city == "Chelsea":
+        yr = list(range(2018, 2020))
     PD_total_earnings = total_earnings[total_earnings["department"] == dept_name]
-    PD_by_year = PD_total_earnings.groupby(year_col).sum()[earnings_col]
-    total_by_year = total_earnings.groupby(year_col).sum()[earnings_col]
+    PD_by_calendar_year = PD_total_earnings.groupby(year_col).sum()[earnings_col]
+    total_by_calendar_year = total_earnings.groupby(year_col).sum()[earnings_col]
     no_teachers = remove_schools(total_earnings, city)
-    total_by_year_no_teachers = no_teachers.groupby(year_col).sum()[earnings_col]
-    return PD_by_year, PD_by_year/total_by_year_no_teachers, PD_by_year/total_by_year, PD_total_earnings
+    total_no_teachers_by_calendar_year = no_teachers.groupby(year_col).sum()[earnings_col]
+
+    PD_by_year = pd.Series(index=yr)
+    total_no_teachers_by_year = pd.Series(index=yr)
+    total_by_year = pd.Series(index=yr)
+    if city == "Chelsea":
+        PD_by_year.loc[2017] = PD_by_calendar_year.loc[2017]
+        total_no_teachers_by_year.loc[2017] = total_no_teachers_by_calendar_year.loc[2017]
+        total_by_year.loc[2017] = total_by_calendar_year.loc[2017]
+    for y in yr:
+        PD_by_year.loc[y] = .5*PD_by_calendar_year.loc[y-1] + .5*PD_by_calendar_year.loc[y]
+        total_no_teachers_by_year = .5*total_no_teachers_by_calendar_year.loc[y-1] + \
+                                    .5*total_no_teachers_by_calendar_year[y]
+        total_by_year = .5*total_by_calendar_year[y-1] + .5*total_by_calendar_year[y]
+
+    return PD_by_year, PD_by_year/total_no_teachers_by_year, PD_by_year/total_by_year, PD_total_earnings
+
+
 
 def get_numeric(x):
     if isinstance(x, float) or isinstance(x, int):

@@ -138,7 +138,7 @@ class StateAgency(Agency):
         self.non_hidden_fringe_by_year = pd.Series(index=self.year_range, data=0)
         self.calender_year_data = True  # New June 24th
         self.payroll = None  # New on June 22nd
-        self.payroll_by_year = None  # New August 14th
+        self.payroll_by_year = pd.Series(index=self.year_range, data=None)
         self.pay_col = None  # List of column names to keep and sum payroll info over
         self.official_budget_name = self.official_name.split("(")[0][:-1]  # Name in budget data in fmz7-6ft9
         self.budget = None
@@ -160,16 +160,17 @@ class StateAgency(Agency):
         if not self.final_costs_calculated:
             self.final_costs_calculated = True
             self.get_expenditures_by_year()
-            self.add_fringe()
             self.add_settlements()
+            self.add_payroll_by_year()
+            self.add_fringe()
+
             self.operating_costs = self.expenditures_by_year.loc["Total Expenditures"]
             # New Aug 24th: split operating costs into payroll, non-payroll
-            self.true_payroll_by_year = self.payroll_by_year.loc["pay total actual", self.year_range] # New Oct 28th in Version 2
 
             if self.alias in DCP_capital_expenditures.index:
                 self.capital_expenditures_by_year += DCP_capital_expenditures.loc[self.alias, self.year_range]
 
-            self.final_cost = self.true_payroll_by_year + self.non_payroll_operating_expenditures_by_year + \
+            self.final_cost = self.payroll_by_year + self.non_payroll_operating_expenditures_by_year + \
                          self.settlements + self.fringe + \
                          self.capital_expenditures_by_year
 
@@ -254,11 +255,11 @@ class StateAgency(Agency):
     def add_payroll_by_year(self, total_OT_only=False):
         """Written by Sasha on June 24th to take code from exploratory main"""
         self.add_payroll(total_OT_only)
-        payroll_by_year = self.payroll.groupby("year")[self.pay_col].sum().T
-        self.clean_labels(payroll_by_year)
-        self.payroll_by_year = payroll_by_year[payroll_by_year.index.str.contains("to date") == False]
-        self.final_payroll_by_year = self.payroll_by_year.loc[
-            "pay total actual"]  # Added because MBTA has different final payroll per year
+        payroll_by_calendar_year = self.payroll.groupby("year")[self.pay_col].sum().T
+        for y in self.year_range:
+            self.payroll_by_year[y] = .5*payroll_by_calendar_year.loc["pay_total_actual", y-1] + \
+                                      .5*payroll_by_calendar_year.loc["pay_total_actual", y]
+
 
     def add_budget(self):
         """Created by Sasha on June 22nd
@@ -299,9 +300,9 @@ class StateAgency(Agency):
 
     def add_fringe(self):
         """New August 14th, at this point only gets health insurance from GIC"""
-        if self.payroll_by_year is None: #This is the sort of code that should come out, I should just call payroll by year beforehand
+        if self.payroll_by_year.empty: #This is the sort of code that should come out, I should just call payroll by year beforehand
             self.add_payroll_by_year()
-        pcnt_by_year = self.final_payroll_by_year / total_statewide_payroll
+        pcnt_by_year = self.payroll_by_year / total_statewide_payroll
         self.non_hidden_fringe_by_year = self.non_hidden_fringe.groupby("budget_fiscal_year").sum()["amount"].T
         self.non_hidden_fringe_by_year = self.non_hidden_fringe_by_year.reindex(self.year_range, fill_value=0)
         hidden_fringe = pcnt_by_year * total_statewide_fringe
@@ -316,7 +317,7 @@ class StateAgency(Agency):
             official_name = self.payroll_official_name
         else:
             official_name = self.official_name
-        return "department_division = '" + official_name + "' AND Year >= " + str(self.year_range[0]) + \
+        return "department_division = '" + official_name + "' AND Year >= " + str(self.year_range[0]-1) + \
                "AND Year <= " + str(self.year_range[-1])
 
     def construct_budget_SOQL(self):
@@ -341,21 +342,18 @@ class MBTA(StateAgency):
                              payroll_vendors=[],
                              payroll_official_name='Massachusetts Bay Transportation Authority (MBT)',
                              client=client, correction_function=correction_function)
-        self.payroll_by_year = pd.DataFrame(columns=self.year_range)
+        self.payroll_by_year = pd.Series(index=self.year_range, data=0)
         self.payroll_expenditures_by_year = pd.Series(index=self.year_range, data= 0)
 
     def get_final_costs(self, apply_correction=True, add_hidden_costs=False, pensions_statewide=None):
         """Janky to pass pensions_statewide df but never use it, but I'm up against deadline today """
-        if self.payroll_by_year is None or self.payroll_by_year.empty:
+        if self.payroll_by_year.sum() == 0:
             self.add_payroll_by_year()
-        out_df = self.payroll_by_year.loc[["police_pay"]]
-        out_df.loc["police_pay"] = [out_df.iloc[0, x] if not np.isnan(out_df.iloc[0, x]) else out_df.iloc[0, x - 1]
-                                    for x in range(out_df.shape[1])]
-        self.true_payroll_by_year = out_df.loc[:, self.year_range].loc["police_pay"]
+
         self.payroll_expenditures_by_year = self.operating_costs
         self.non_payroll_operating_expenditures_by_year = pd.Series(index=list(range(2016, 2020)), data=0)
-        final = self.true_payroll_by_year +self.non_payroll_operating_expenditures_by_year \
-                +  self.pensions + self.fringe + self.capital_expenditures_by_year
+        final = self.payroll_by_year +self.non_payroll_operating_expenditures_by_year \
+                + self.pensions + self.fringe + self.capital_expenditures_by_year
         return self.correction_function(final)
 
     def add_payroll_by_year(self):
@@ -364,17 +362,17 @@ class MBTA(StateAgency):
         self.add_payroll(True)
         self.payroll["police_pay"] = self.payroll.apply(lambda x: self.get_police_pay(x),
                                                         axis=1)
-        self.payroll_by_year = self.payroll.groupby("year").agg({"pay_total_actual": "sum", "police_pay": "sum"}).T
+        self.payroll_by_calendar_year = self.payroll.groupby("year").agg({"pay_total_actual": "sum", "police_pay": "sum"}).T
         scraped = scrape_payroll('data/MBTA_pdfs/Payroll_Result_Jul21.json')
         for y in ["2015", "2017"]:
-            self.payroll_by_year.loc["pay_total_actual", int(y)] = scraped[y]["total_pay_actual"]
-            self.payroll_by_year.loc["police_pay", int(y)] = scraped[y]["police_pay"]
-        # Set 2020 to NA because it hasn't finished yet, so we don't know total expenditures, will use same nums as 2019
-        self.payroll_by_year[2016] = np.NaN
-        self.payroll_by_year[2020] = np.NaN
-        self.payroll_by_year = self.payroll_by_year.loc[:, list(range(2015, 2021))]
-        self.final_payroll_by_year = self.payroll_by_year.loc["police_pay"]
-        self.final_payroll_by_year[2016] = self.final_payroll_by_year[2015]
+            self.payroll_by_calendar_year.loc["pay_total_actual", int(y)] = scraped[y]["total_pay_actual"]
+            self.payroll_by_calendar_year.loc["police_pay", int(y)] = scraped[y]["police_pay"]
+        self.payroll_by_year[2016] = self.payroll_by_calendar_year.loc["police_pay", 2015] #Missing data for 2016
+        self.payroll_by_year[2017] = self.payroll_by_calendar_year.loc["police_pay", 2017]
+        for y in self.year_range[2:]:
+            self.payroll_by_year.loc[y] = .5*self.payroll_by_calendar_year.loc["police_pay", y-1] +\
+                                          .5*self.payroll_by_calendar_year.loc["police_pay", y]
+
 
     def get_police_pay(self, row):
         if "police" in row["position_title"].lower():
@@ -447,16 +445,16 @@ class PoliceDepartment(Agency):
         self.pensions = self.add_pension_costs(PD_fraction_non_teacher)
         self.fringe = self.add_fringe_benefits(PD_fraction_total)
         self.payroll = PD_payroll
-        self.true_payroll_by_year = total_earnings
+        self.payroll_by_year = total_earnings
         self.payroll_expenditures_by_year = self.budget_summary.loc["Payroll Expenditures", list(range(2016,2020))] # Need to fix year range
         if self.alias == "Chelsea PD":
-            self.true_payroll_by_year[2016] = self.budget_summary.loc["Payroll Budget", 2016]
+            self.payroll_by_year[2016] = self.budget_summary.loc["Payroll Budget", 2016]
             self.payroll_expenditures_by_year[2016] = self.budget_summary.loc["Payroll Budget", 2016]
         self.non_payroll_operating_expenditures_by_year = self.budget_summary.loc["Total Expenditures"] - \
                                                   self.budget_summary.loc["Payroll Expenditures"]
         self.non_payroll_operating_expenditures_by_year = \
             self.non_payroll_operating_expenditures_by_year.loc[list(range(2016, 2020))]
-        self.operating_costs = self.true_payroll_by_year + self.non_payroll_operating_expenditures_by_year
+        self.operating_costs = self.payroll_by_year + self.non_payroll_operating_expenditures_by_year
 
     def scrape(self):
         file_path = saved_scraped_path + self.alias + ".csv"
@@ -820,7 +818,7 @@ class ReverePD(PoliceDepartment):
                                                   self.budget_summary.loc["Payroll Adopted"]
         self.non_payroll_operating_expenditures_by_year = \
             self.non_payroll_operating_expenditures_by_year.loc[list(range(2016, 2020))]
-        self.true_payroll_by_year = self.payroll_expenditures_by_year
+        self.payroll_by_year = self.payroll_expenditures_by_year
         if add_hidden_costs:
             return self.operating_costs + self.pensions + self.fringe + self.capital_expenditures_by_year
         else:
@@ -940,7 +938,7 @@ class WinthropPD(PoliceDepartment):
         self.payroll_expenditures_by_year[2018] = self.budget_summary.loc["Payroll Budget", 2018]
         self.non_payroll_operating_expenditures_by_year = self.operating_costs - self.payroll_expenditures_by_year - \
                                                   self.capital_expenditures_by_year.loc[list(range(2016, 2020))]
-        self.true_payroll_by_year = self.payroll_expenditures_by_year
+        self.payroll_by_year = self.payroll_expenditures_by_year
         return self.operating_costs + self.fringe + self.pensions + \
                self.capital_expenditures_by_year.loc[list(range(2016, 2020))]
 
