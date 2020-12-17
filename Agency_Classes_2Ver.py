@@ -187,21 +187,22 @@ class StateAgency(Agency):
         year_range is list of years to do analysis over
         Do to: pull out spending on fringe benefits and put that in benefit series
         """
-        file_name = self.alias + "_expenditures.csv"
-        self.expenditures = self.find_data(file_name, client, "pegc-naaa", self.construct_expenditures_SOQL)
-        self.expenditures["amount"] = self.expenditures["amount"].astype(float)
-        self.expenditures["budget_fiscal_year"] = self.expenditures["budget_fiscal_year"].astype(int)
-        self.expenditures = self.expenditures[self.expenditures["appropriation_type"].str.contains("INTRAGOVERNMENTAL") == False]
-        self.federal_expenditures = self.expenditures[self.expenditures["appropriation_type"].str.contains("FEDERAL")]
-        self.federal_expenditures_by_year = self.federal_expenditures.groupby("budget_fiscal_year").sum()["amount"].T
-        self.federal_expenditures_by_year = self.federal_expenditures_by_year.reindex(self.year_range, fill_value=0)
-        self.expenditures = self.expenditures[self.expenditures["appropriation_type"].str.contains("FEDERAL") == False]
-        self.capital_expenditures = self.expenditures[self.expenditures["appropriation_type"] == "(2CN) CAPITAL"]
-        self.capital_expenditures_by_year = self.capital_expenditures.groupby("budget_fiscal_year").sum()["amount"].T
-        self.capital_expenditures_by_year = self.capital_expenditures_by_year.reindex(self.year_range, fill_value=0)
-        self.expenditures = self.expenditures[self.expenditures["appropriation_type"] != "(2CN) CAPITAL"]
-        self.non_hidden_fringe = self.expenditures[self.expenditures["object_class"] == "(DD) PENSION & INSURANCE RELATED EX"]
-        self.expenditures = self.expenditures[self.expenditures["object_class"]!="(DD) PENSION & INSURANCE RELATED EX"]
+        if self.expenditures is None:
+            file_name = self.alias + "_expenditures.csv"
+            self.expenditures = self.find_data(file_name, client, "pegc-naaa", self.construct_expenditures_SOQL)
+            self.expenditures["amount"] = self.expenditures["amount"].astype(float)
+            self.expenditures["budget_fiscal_year"] = self.expenditures["budget_fiscal_year"].astype(int)
+            self.expenditures = self.expenditures[self.expenditures["appropriation_type"].str.contains("INTRAGOVERNMENTAL") == False]
+            self.federal_expenditures = self.expenditures[self.expenditures["appropriation_type"].str.contains("FEDERAL")]
+            self.federal_expenditures_by_year = self.federal_expenditures.groupby("budget_fiscal_year").sum()["amount"].T
+            self.federal_expenditures_by_year = self.federal_expenditures_by_year.reindex(self.year_range, fill_value=0)
+            self.expenditures = self.expenditures[self.expenditures["appropriation_type"].str.contains("FEDERAL") == False]
+            self.capital_expenditures = self.expenditures[self.expenditures["appropriation_type"] == "(2CN) CAPITAL"]
+            self.capital_expenditures_by_year = self.capital_expenditures.groupby("budget_fiscal_year").sum()["amount"].T
+            self.capital_expenditures_by_year = self.capital_expenditures_by_year.reindex(self.year_range, fill_value=0)
+            self.expenditures = self.expenditures[self.expenditures["appropriation_type"] != "(2CN) CAPITAL"]
+            self.non_hidden_fringe = self.expenditures[self.expenditures["object_class"] == "(DD) PENSION & INSURANCE RELATED EX"]
+            self.expenditures = self.expenditures[self.expenditures["object_class"]!="(DD) PENSION & INSURANCE RELATED EX"]
 
     def get_expenditures_payroll(self):
         assert type(self.expenditures) == pd.core.frame.DataFrame, \
@@ -332,6 +333,56 @@ class StateAgency(Agency):
             SOQL += "dept_paid_on_behalf_of = '" + self.settlement_agencies[0] + "' OR "
         SOQL = SOQL[:-4] + ") AND bfy >= " + str(self.year_range[0])
         return SOQL
+
+class CPCS(StateAgency):
+
+    def __init__(self, alias, official_name, year_range, payroll_vendors, category, client, correction_function, settlement_agencies):
+        StateAgency.__init__(self, alias, official_name, year_range, category, correction_function, settlement_agencies, payroll_vendors, None, client)
+
+
+    def get_final_costs(self, apply_correction=True):
+        """Created August 12 for new methodology where we use expenditures for everything"""
+        if not self.final_costs_calculated:
+            self.final_costs_calculated = True
+            self.add_expenditures(client)
+            self.RR_correction()
+            self.get_expenditures_by_year()
+            self.add_settlements()
+            self.add_payroll_by_year()
+            self.add_fringe()
+
+            self.operating_costs = self.expenditures_by_year.loc["Total Expenditures"]
+            # New Aug 24th: split operating costs into payroll, non-payroll
+
+            if self.alias in DCP_capital_expenditures.index:
+                self.capital_expenditures_by_year += DCP_capital_expenditures.loc[self.alias, self.year_range]
+
+            self.final_cost = self.payroll_by_year + self.non_payroll_operating_expenditures_by_year + \
+                         self.settlements + self.fringe + \
+                         self.capital_expenditures_by_year
+
+        if apply_correction:
+            return self.correction_function(self.final_cost)
+        else:
+            return self.final_cost
+
+    def RR_correction(self):
+        """Written 12/17 to move public counsel dollars from expenditures to payroll"""
+        public_counsel = self.expenditures[self.expenditures["object_code"] == "(R24) PUBLIC COUNSEL"]
+        self.expenditures = self.expenditures[self.expenditures["object_code"] != "(R24) PUBLIC COUNSEL"]
+        self.payroll_by_year = public_counsel.groupby("budget_fiscal_year").sum()["amount"].loc[self.year_range]
+
+
+    def add_payroll_by_year(self, total_OT_only=False):
+        """Special version of this function for CPCS gets payroll by year already created in RR_correction and populated
+        with public counsel spending"""
+        self.add_payroll(total_OT_only)
+        payroll_by_calendar_year = self.payroll.groupby("year")[self.pay_col].sum().T
+        for y in self.year_range:
+            self.payroll_by_year[y] = self.payroll_by_year[y] + \
+                                      .5*payroll_by_calendar_year.loc["pay_total_actual", y-1] + \
+                                      .5*payroll_by_calendar_year.loc["pay_total_actual", y]
+
 
 
 class MBTA(StateAgency):

@@ -2,7 +2,7 @@
 This version is better if you want all agencies, if you want to skip version 1 may be better
 I should write a 3rd version where you can put in agencies wanted"""
 
-from Agency_Classes_2Ver import StateAgency, MBTA, BostonPD, ChelseaPD, ReverePD, WinthropPD
+from Agency_Classes_2Ver import StateAgency, CPCS, MBTA, BostonPD, ChelseaPD, ReverePD, WinthropPD
 from sodapy import Socrata
 from Agency_Corrections import trial_court_correction, DOC_correction, \
     appeals_court_correction, population_correction
@@ -21,7 +21,7 @@ def get_agencies(yr):
                                           correction_function=trial_court_correction,
                                           settlement_agencies=["TRIAL COURT"])
 
-    out_dict["CPCS"] = StateAgency(alias="CPCS", official_name="COMMITTEE FOR PUBLIC COUNSEL SERVICES (CPC)",
+    out_dict["CPCS"] = CPCS(alias="CPCS", official_name="COMMITTEE FOR PUBLIC COUNSEL SERVICES (CPC)",
                                    year_range=yr, payroll_vendors=["CPC - SUMMARY PAYROLL"],
                                    client=client, category="Legal",
                                    correction_function=trial_court_correction,

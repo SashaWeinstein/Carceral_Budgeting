@@ -75,12 +75,6 @@ def as_pcnt_of_total(cthru_pension_payouts, requery):
 
     payout_pct = pd.DataFrame(index=payouts_gb.index, columns=payouts_gb.columns)
     total_by_year = cthru_pension_payouts.groupby("year").sum()["annual_amount"]
-    print("payouts by agency")
-    display(payouts_gb)
-    print("payouts by year total")
-    display(total_by_year)
-    print("column named 2015 from dataframe of payout percentage")
-    display(payout_pct.loc[:,2015])
     for y in list(range(2016,2020)):
         payout_pct.loc[:, y] = .5*(payouts_gb[y-1]/total_by_year[y-1]) + .5*(payouts_gb[y]/total_by_year[y])
     return payout_pct
