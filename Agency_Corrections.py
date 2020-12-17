@@ -65,10 +65,7 @@ def suffolk_correction():
         current = df.loc[:, (df.columns.str.contains(str(y)) & df.columns.str.contains("Q1|Q2"))]
         s = prev.sum(axis=1) + current.sum(axis=1)
         correction_series.loc[y] = s[0] / s[1]
-    print("raw data:")
-    display(df)
-    print("correction by FY:")
-    display(correction_series)
+
     return correction_series
 
 def get_suffolk_correction_df():
