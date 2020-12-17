@@ -41,7 +41,7 @@ big_path = "/Users/alexanderweinstein/Documents/Harris/Summer2020/Carceral_Budge
 
 def get_cthru_pension_payouts(requery):
     """New July 30th"""
-    cthru_pensions = find_data(requery, client, "pni4-392n", "year >=2016 AND year <= 2020",
+    cthru_pensions = find_data(requery, client, "pni4-392n", "year >=2015 AND year <= 2020",
                                "cthru_retirement_benefits.csv")
     cthru_pensions = clean_pensions(cthru_pensions)
     umbrella_depts = cthru_pensions.apply(lambda x: find_umbrella(x["department"], x["title_at_retirement"]), axis=1)
@@ -75,15 +75,21 @@ def as_pcnt_of_total(cthru_pension_payouts, requery):
 
     payout_pct = pd.DataFrame(index=payouts_gb.index, columns=payouts_gb.columns)
     total_by_year = cthru_pension_payouts.groupby("year").sum()["annual_amount"]
-    for year in payouts_gb.columns:
-        payout_pct[year] = payouts_gb[year]/total_by_year[year]
+    print("payouts by agency")
+    display(payouts_gb)
+    print("payouts by year total")
+    display(total_by_year)
+    print("column named 2015 from dataframe of payout percentage")
+    display(payout_pct.loc[:,2015])
+    for y in list(range(2016,2020)):
+        payout_pct.loc[:, y] = .5*(payouts_gb[y-1]/total_by_year[y-1]) + .5*(payouts_gb[y]/total_by_year[y])
     return payout_pct
 
 def pension_payments_statewide(payouts_fraction, contributions_by_year):
     """Takes fraction pf payout money to each entity (can be agency or umbrella dept right now) and caculates sum
     of total pension contributions"""
     pension_costs_statewide_calculated = pd.DataFrame(index=payouts_fraction.index, columns=payouts_fraction.columns)
-    for year in payouts_fraction.columns:
+    for year in contributions_by_year.index:
         pension_costs_statewide_calculated[year] = payouts_fraction[year] * contributions_by_year[year]
     sheriff_extra(pension_costs_statewide_calculated)
     return pension_costs_statewide_calculated
