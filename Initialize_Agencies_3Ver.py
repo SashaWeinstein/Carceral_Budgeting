@@ -49,7 +49,8 @@ def get_agencies(yr):
     out_dict["MBTA"] = MBTA(alias="MBTA", official_name="MASSACHUSETTS BAY TRANSPORTATION AUTHORITY (MBT)",
                             year_range=yr,
                             client=client,
-                            category="Police")  # As of August 12th took away MBTA correction function
+                            category="Police",
+                            correction_function=population_correction)  # As of August 12th took away MBTA correction function
 
     out_dict["DAA"] = StateAgency(alias="DAA", official_name="DISTRICT ATTORNEY ASSOCIATION (DAA)", year_range=yr,
                                   payroll_vendors=["DAA - SUMMARY PAYROLL"], client=client, category="Legal",
