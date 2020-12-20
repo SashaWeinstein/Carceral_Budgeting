@@ -4,7 +4,8 @@ stores how much external funds that are non-state for each year.
 For the earnings dataset, we will estimate that the % of those funds that come from
 federal/private dollars is the same % of total police expenditures that year that came from federal money
 Note that our sum of federal/private include some money towards 'Revolving Funds' that come
-from other local agencies"""
+from other local agencies
+If it's unclear where money comes from assume it's not state/local money to err on the side of under-counting"""
 
 import pandas as pd
 
@@ -32,7 +33,7 @@ federal_priv_grants_2018.loc["Nuestra Comunidad Development Corporation"] = 905
 federal_priv_grants_2018.loc["Office of Violence Against Women"] = 0  # Can't find
 federal_priv_grants_2018.loc["OJJDP Opportunities to Reduce Recidivism"] = 0
 federal_priv_grants_2018.loc["Paul Coverdell National Forensic Grant"] = 96732
-federal_priv_grants_2018.loc["Police Fitness Center Revolving Center"] = 167275
+federal_priv_grants_2018.loc["Police Fitness Center Revolving Fund"] = 167275
 federal_priv_grants_2018.loc["Port Security Grant"] = 50589
 federal_priv_grants_2018.loc["Smart Policing Evidence-Based Law Enforcement Program"] = 165466
 federal_priv_grants_2018.loc["Social Sciences Research in Forensic Science"] = 4059
@@ -51,7 +52,7 @@ federal_priv_grants_2019.loc["DNA Laboratory Initiative"] = 300960
 federal_priv_grants_2019.loc["Hackney Revolving Fund"] = 33407
 federal_priv_grants_2019.loc["JAG Equipment Grant"] = 135899
 federal_priv_grants_2019.loc["Justice and Mental Health Expansion Project"] = 32259
-federal_priv_grants_2019.loc["Justice Assistance Grant (JAG)"] =  589129
+federal_priv_grants_2019.loc["Justice Assistance Grant (JAG)"] = 589129
 federal_priv_grants_2019.loc["National Crime Statistics Exchange"] = 0
 federal_priv_grants_2019.loc["National Forum Capacity Building Demonstration"] = 30496
 federal_priv_grants_2019.loc["National Violent Death Reporting Grant aka Injury Surveillance Project"] = 5888
@@ -122,7 +123,7 @@ def BostonPD_External_Funds_Correction():
     """Each year uses actual expenditures"""
     df = pd.DataFrame(columns=list(range(2016,2020)),
                       index=["Total Federal/Private Grant Expenditures"] )
-    df.loc["Total Federal/Private Grant Expenditures", 2016] =federal_priv_grants_2018.sum()
+    df.loc["Total Federal/Private Grant Expenditures", 2016] = federal_priv_grants_2018.sum()
     df.loc["Total Federal/Private Grant Expenditures", 2017] = federal_priv_grants_2019.sum()
     df.loc["Total Federal/Private Grant Expenditures", 2018] = federal_priv_grants_2020.sum()
     df.loc["Total Federal/Private Grant Expenditures", 2019] = federal_priv_grants_2021.sum()

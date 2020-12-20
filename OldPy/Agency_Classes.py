@@ -1,7 +1,8 @@
-"""Version 2 Created by Sasha Oct 27th
-New in version 2:
-Change methodology in how cthru expenditures are split into payroll, non-payroll. Use vendor instead of object class
-"""
+"""Last updated by Sasha on August 24th
+New on august 24th: each agency should have a payroll_expenditures and a non-payroll_operating_expenditures attribute
+Possible to do: set yearly operating costs, pensions, fringe benefits, capital costs, settlements attr in parent
+agency class
+I also need to clean up how boston, chelsea add true earnings and fringe benefits"""
 import pandas as pd
 import numpy as np
 from sodapy import Socrata
@@ -36,7 +37,6 @@ app_token = "2Qa1WiG8G4kj1vGVd2noK7zP0"
 client = Socrata("cthru.data.socrata.com", app_token)
 client.timeout = 40
 
-# To-Do: maybe move this code to initialize agencies? Makes more logical sense there
 pensions_statewide = by_agency(False)
 total_statewide_payroll = Total_Statewide_Payroll(client)
 total_statewide_fringe = Total_Statewide_Fringe(client)
@@ -62,22 +62,11 @@ class Agency():
         self.category = category
         # Following two attr are from expenditures dataset
         self.payroll_expenditures_by_year = None
-        self.true_payroll_by_year = None  # Work on this next
-        self.non_payroll_operating_expenditures_by_year = pd.Series(index=self.year_range, data=0)
+        self.non_payroll_operating_expenditures_by_year = None
         if correction_function:
             self.correction_function = correction_function
         else:
             self.correction_function = lambda x: x
-        if self.alias in pensions_statewide.index:
-            self.pensions = pensions_statewide.loc[self.alias, self.year_range]
-        else:
-            self.pensions = pd.Series(index=self.year_range, data=0)
-        self.fringe = pd.Series(index=self.year_range, data=0)
-        self.federal_expenditures_by_year = pd.Series(index=list(range(2016, 2020)),
-                                                      data=0)  # needs fix: have to use range here cause some police year ranges aren't 2016-2020. Have to fix that then can use self.year_range
-        self.final_cost = pd.Series(
-            index=list(range(2016, 2020)))  # Not fully implemented yet, just works for state agencies
-        self.capital_expenditures = None  # New August 19th
         assert category in ["Legal", "Jails", "Police",
                             "Other"], "Category for" + self.alias + "not an existing category"
 
@@ -135,12 +124,11 @@ class StateAgency(Agency):
         self.payroll_vendors = payroll_vendors  # Should be a list of vendors.
         self.settlement_agencies = settlement_agencies
         self.expenditures = None
-        self.capital_expenditures_by_year = pd.Series(index=self.year_range, data=0)
-        self.non_hidden_fringe = pd.DataFrame()  # New Nov 9th
-        self.non_hidden_fringe_by_year = pd.Series(index=self.year_range, data=0)
+        self.capital_expenditures_all = None  # New August 19th
+        self.capital_expenditures = pd.Series(index=self.year_range, data=0)
         self.calender_year_data = True  # New June 24th
         self.payroll = None  # New on June 22nd
-        self.payroll_by_year = pd.Series(index=self.year_range, data=None)
+        self.payroll_by_year = None  # New August 14th
         self.pay_col = None  # List of column names to keep and sum payroll info over
         self.official_budget_name = self.official_name.split("(")[0][:-1]  # Name in budget data in fmz7-6ft9
         self.budget = None
@@ -152,64 +140,41 @@ class StateAgency(Agency):
         self.expenditures_by_year = pd.DataFrame(columns=self.year_range)
         self.budget_by_year = pd.DataFrame(columns=self.year_range)
         self.operating_costs = None  # This is where cost type "operating costs" will be stored
-
-        self.final_costs_calculated = False
-        self.get_final_costs()
-
-    def get_final_costs(self, apply_correction=True):
-        """Created August 12 for new methodology where we use expenditures for everything"""
-        if not self.final_costs_calculated:
-            self.final_costs_calculated = True
-            self.get_expenditures_by_year()
-            self.add_settlements()
-            self.add_payroll_by_year()
-            self.add_fringe()
-
-            self.operating_costs = self.expenditures_by_year.loc["Total Expenditures"]
-            # New Aug 24th: split operating costs into payroll, non-payroll
-
-            if self.alias in DCP_capital_expenditures.index:
-                self.capital_expenditures_by_year += DCP_capital_expenditures.loc[self.alias, self.year_range]
-
-            self.final_cost = self.payroll_by_year + self.non_payroll_operating_expenditures_by_year + \
-                              self.settlements + self.fringe + \
-                              self.capital_expenditures_by_year
-
-        if apply_correction:
-            return self.correction_function(self.final_cost)
+        if self.alias in pensions_statewide.index:
+            self.pensions = pensions_statewide.loc[self.alias, self.year_range]
         else:
-            return self.final_cost
+            self.pensions = pd.Series(index=self.year_range, data=0)
+        self.add_fringe()
+
+    def get_final_costs(self, add_hidden_costs=True):
+        """Created August 12 for new methodology where we use expenditures for everything"""
+        self.get_expenditures_by_year()
+        self.add_settlements()
+        self.operating_costs = self.expenditures_by_year.loc["Total Expenditures"]
+        # New Aug 24th: split operating costs into payroll, non-payroll
+
+        final_cost = self.operating_costs + self.settlements + self.fringe + \
+                     self.capital_expenditures
+        if add_hidden_costs and self.alias in pensions_statewide.index:
+            final_cost = final_cost + self.pensions
+        if add_hidden_costs and self.alias in DCP_capital_expenditures.index:
+            final_cost = final_cost + DCP_capital_expenditures.loc[self.alias, self.year_range]
+
+        return self.correction_function(final_cost)
 
     def add_expenditures(self, client):
         """Adds expenditures for agency over the given year range
         Uses this dataset https://cthru.data.socrata.com/dataset/Comptroller-of-the-Commonwealth-Spending/pegc-naaa
         client is Socrata object
         year_range is list of years to do analysis over
-        Do to: pull out spending on fringe benefits and put that in benefit series
         """
-        if self.expenditures is None:
-            file_name = self.alias + "_expenditures.csv"
-            self.expenditures = self.find_data(file_name, client, "pegc-naaa", self.construct_expenditures_SOQL)
-            self.expenditures["amount"] = self.expenditures["amount"].astype(float)
-            self.expenditures["budget_fiscal_year"] = self.expenditures["budget_fiscal_year"].astype(int)
-            self.expenditures = self.expenditures[
-                self.expenditures["appropriation_type"].str.contains("INTRAGOVERNMENTAL") == False]
-            self.federal_expenditures = self.expenditures[
-                self.expenditures["appropriation_type"].str.contains("FEDERAL")]
-            self.federal_expenditures_by_year = self.federal_expenditures.groupby("budget_fiscal_year").sum()[
-                "amount"].T
-            self.federal_expenditures_by_year = self.federal_expenditures_by_year.reindex(self.year_range, fill_value=0)
-            self.expenditures = self.expenditures[
-                self.expenditures["appropriation_type"].str.contains("FEDERAL") == False]
-            self.capital_expenditures = self.expenditures[self.expenditures["appropriation_type"] == "(2CN) CAPITAL"]
-            self.capital_expenditures_by_year = self.capital_expenditures.groupby("budget_fiscal_year").sum()[
-                "amount"].T
-            self.capital_expenditures_by_year = self.capital_expenditures_by_year.reindex(self.year_range, fill_value=0)
-            self.expenditures = self.expenditures[self.expenditures["appropriation_type"] != "(2CN) CAPITAL"]
-            self.non_hidden_fringe = self.expenditures[
-                self.expenditures["object_class"] == "(DD) PENSION & INSURANCE RELATED EX"]
-            self.expenditures = self.expenditures[
-                self.expenditures["object_class"] != "(DD) PENSION & INSURANCE RELATED EX"]
+        file_name = self.alias + "_expenditures.csv"
+        self.expenditures = self.find_data(file_name, client, "pegc-naaa", self.construct_expenditures_SOQL)
+        self.expenditures["amount"] = self.expenditures["amount"].astype(float)
+        self.expenditures["budget_fiscal_year"] = self.expenditures["budget_fiscal_year"].astype(int)
+        self.expenditures = self.expenditures[self.expenditures["appropriation_type"].str.contains("FEDERAL") == False]
+        self.capital_expenditures_all = self.expenditures[self.expenditures["appropriation_type"] == "(2CN) CAPITAL"]
+        self.expenditures = self.expenditures[self.expenditures["appropriation_type"] != "(2CN) CAPITAL"]
 
     def get_expenditures_payroll(self):
         assert type(self.expenditures) == pd.core.frame.DataFrame, \
@@ -222,20 +187,24 @@ class StateAgency(Agency):
         """Written by Sasha on June 24th to take code that was in Exploratory Main"""
         self.add_expenditures(self.client)
         self.get_expenditures_payroll()
-        payroll_expenditures = self.expenditures[self.expenditures["vendor"].str.contains("(?i)payroll")]
-        non_payroll_expenditures = self.expenditures[self.expenditures["vendor"].str.contains("(?i)payroll") == False]
+        payroll_expenditures = self.expenditures[self.expenditures["object_code"].str.get(1) == "A"]
+        non_payroll_expenditures = self.expenditures[self.expenditures["object_code"].str.get(1) != "A"]
         assert np.isclose(payroll_expenditures["amount"].sum() + non_payroll_expenditures["amount"].sum(),
-                          self.expenditures["amount"].sum())
+               self.expenditures["amount"].sum())
         self.expenditures_by_year = self.expenditures.groupby("budget_fiscal_year").agg({"amount": "sum",
                                                                                          "payroll_amount": "sum"}).T
         self.expenditures_by_year.rename(index={"amount": "Total Expenditures",
                                                 "payroll_amount": "Payroll Expenditures"}, inplace=True)
         self.expenditures_by_year = self.expenditures_by_year.loc[:, self.year_range]
 
-        self.payroll_expenditures_by_year = payroll_expenditures.groupby("budget_fiscal_year").sum()["amount"].loc[
-            list(range(2016, 2020))]
+        self.payroll_expenditures_by_year = payroll_expenditures.groupby("budget_fiscal_year").sum()["amount"].loc[list(range(2016, 2020))]
         self.non_payroll_operating_expenditures_by_year = non_payroll_expenditures. \
             groupby("budget_fiscal_year").sum()["amount"].loc[list(range(2016, 2020))]
+
+        if not self.capital_expenditures_all.empty:
+            self.capital_expenditures += self.capital_expenditures_all. \
+                groupby("budget_fiscal_year").sum()["amount"]
+            self.capital_expenditures = self.capital_expenditures.loc[self.year_range].fillna(0)
 
     def get_possible_pension_spending(self):
         """Written July 17th to help me figure out if pension spending is already in this dataset"""
@@ -263,10 +232,11 @@ class StateAgency(Agency):
     def add_payroll_by_year(self, total_OT_only=False):
         """Written by Sasha on June 24th to take code from exploratory main"""
         self.add_payroll(total_OT_only)
-        payroll_by_calendar_year = self.payroll.groupby("year")[self.pay_col].sum().T
-        for y in self.year_range:
-            self.payroll_by_year[y] = .5 * payroll_by_calendar_year.loc["pay_total_actual", y - 1] + \
-                                      .5 * payroll_by_calendar_year.loc["pay_total_actual", y]
+        payroll_by_year = self.payroll.groupby("year")[self.pay_col].sum().T
+        self.clean_labels(payroll_by_year)
+        self.payroll_by_year = payroll_by_year[payroll_by_year.index.str.contains("to date") == False]
+        self.final_payroll_by_year = self.payroll_by_year.loc[
+            "pay total actual"]  # Added because MBTA has different final payroll per year
 
     def add_budget(self):
         """Created by Sasha on June 22nd
@@ -307,13 +277,18 @@ class StateAgency(Agency):
 
     def add_fringe(self):
         """New August 14th, at this point only gets health insurance from GIC"""
-        if self.payroll_by_year.empty:  # This is the sort of code that should come out, I should just call payroll by year beforehand
+        # print("got to add fringe for ", self.alias)
+        if self.payroll_by_year is None:
             self.add_payroll_by_year()
-        pcnt_by_year = self.payroll_by_year / total_statewide_payroll
-        self.non_hidden_fringe_by_year = self.non_hidden_fringe.groupby("budget_fiscal_year").sum()["amount"].T
-        self.non_hidden_fringe_by_year = self.non_hidden_fringe_by_year.reindex(self.year_range, fill_value=0)
-        hidden_fringe = pcnt_by_year * total_statewide_fringe
-        self.fringe = hidden_fringe.loc[self.year_range] + self.non_hidden_fringe_by_year
+        # print("payroll by year is")
+        # display(self.final_payroll_by_year)
+        pcnt_by_year = self.final_payroll_by_year / total_statewide_payroll
+        # print("percent of statewide payroll is")
+        # display(pcnt_by_year)
+        self.fringe = pcnt_by_year * total_statewide_fringe
+        self.fringe = self.fringe.loc[self.year_range]
+        # print("calculated fringe benefits")
+        # display(self.fringe)
 
     def construct_expenditures_SOQL(self):
         return "Department = '" + self.official_name + "' AND budget_fiscal_year >= 2016"
@@ -324,7 +299,7 @@ class StateAgency(Agency):
             official_name = self.payroll_official_name
         else:
             official_name = self.official_name
-        return "department_division = '" + official_name + "' AND Year >= " + str(self.year_range[0] - 1) + \
+        return "department_division = '" + official_name + "' AND Year >= " + str(self.year_range[0]) + \
                "AND Year <= " + str(self.year_range[-1])
 
     def construct_budget_SOQL(self):
@@ -341,62 +316,6 @@ class StateAgency(Agency):
         return SOQL
 
 
-class CPCS(StateAgency):
-
-    def __init__(self, alias, official_name, year_range, payroll_vendors, category, client, correction_function,
-                 settlement_agencies):
-        StateAgency.__init__(self, alias, official_name, year_range, category, correction_function, settlement_agencies,
-                             payroll_vendors, None, client)
-
-    def get_final_costs(self, apply_correction=True):
-        """Created August 12 for new methodology where we use expenditures for everything"""
-        if not self.final_costs_calculated:
-            self.final_costs_calculated = True
-            self.add_expenditures(client)
-
-            self.get_expenditures_by_year()
-            self.RR_correction()
-            self.add_settlements()
-            self.add_payroll_by_year()
-            self.add_fringe()
-
-            self.operating_costs = self.expenditures_by_year.loc["Total Expenditures"]
-            # New Aug 24th: split operating costs into payroll, non-payroll
-
-            if self.alias in DCP_capital_expenditures.index:
-                self.capital_expenditures_by_year += DCP_capital_expenditures.loc[self.alias, self.year_range]
-
-            self.final_cost = self.payroll_by_year + self.non_payroll_operating_expenditures_by_year + \
-                              self.settlements + self.fringe + \
-                              self.capital_expenditures_by_year
-
-        if apply_correction:
-            return self.correction_function(self.final_cost)
-        else:
-            return self.final_cost
-
-    def RR_correction(self):
-        """Written 12/17 to move public counsel dollars from expenditures to payroll"""
-        public_counsel = self.expenditures[(self.expenditures["object_code"] == "(R24) PUBLIC COUNSEL") &
-                                           (self.expenditures["vendor"].str.contains("(?i)payroll") == False)]
-        self.expenditures = self.expenditures[self.expenditures["object_code"] != "(R24) PUBLIC COUNSEL"]
-        self.payroll_by_year = public_counsel.groupby("budget_fiscal_year").sum()["amount"].loc[self.year_range]
-        print("payroll from public counsel")
-        display(self.payroll_by_year)
-
-    def add_payroll_by_year(self, total_OT_only=False):
-        """Special version of this function for CPCS gets payroll by year already created in RR_correction and populated
-        with public counsel spending"""
-        self.add_payroll(total_OT_only)
-        payroll_by_calendar_year = self.payroll.groupby("year")[self.pay_col].sum().T
-        print("payroll from payroll dataset")
-        display(payroll_by_calendar_year)
-        for y in self.year_range:
-            self.payroll_by_year[y] = self.payroll_by_year[y] + \
-                                      .5 * payroll_by_calendar_year.loc["pay_total_actual", y - 1] + \
-                                      .5 * payroll_by_calendar_year.loc["pay_total_actual", y]
-
-
 class MBTA(StateAgency):
     """Giving MBTA Police it's own class because code I use to generate it's numbers is different enough"""
 
@@ -405,19 +324,19 @@ class MBTA(StateAgency):
                              payroll_vendors=[],
                              payroll_official_name='Massachusetts Bay Transportation Authority (MBT)',
                              client=client, correction_function=correction_function)
-        self.payroll_by_year = pd.Series(index=self.year_range, data=0)
-        self.payroll_expenditures_by_year = pd.Series(index=self.year_range, data=0)
-        self.get_final_costs()
+        self.payroll_by_year = pd.DataFrame(columns=self.year_range)
 
-    def get_final_costs(self, apply_correction=True, add_hidden_costs=False, pensions_statewide=None):
+    def get_final_costs(self, add_hidden_costs=False, pensions_statewide=None):
         """Janky to pass pensions_statewide df but never use it, but I'm up against deadline today """
-        if self.payroll_by_year.sum() == 0:
+        if self.payroll_by_year.empty:
             self.add_payroll_by_year()
-
+        out_df = self.payroll_by_year.loc[["police_pay"]]
+        out_df.loc["police_pay"] = [out_df.iloc[0, x] if not np.isnan(out_df.iloc[0, x]) else out_df.iloc[0, x - 1]
+                                    for x in range(out_df.shape[1])]
+        self.operating_costs = out_df.loc[:, self.year_range].loc["police_pay"]
         self.payroll_expenditures_by_year = self.operating_costs
         self.non_payroll_operating_expenditures_by_year = pd.Series(index=list(range(2016, 2020)), data=0)
-        final = self.payroll_by_year + self.non_payroll_operating_expenditures_by_year \
-                + self.pensions + self.fringe + self.capital_expenditures_by_year
+        final = self.operating_costs + self.pensions + self.fringe + self.capital_expenditures
         return self.correction_function(final)
 
     def add_payroll_by_year(self):
@@ -426,17 +345,17 @@ class MBTA(StateAgency):
         self.add_payroll(True)
         self.payroll["police_pay"] = self.payroll.apply(lambda x: self.get_police_pay(x),
                                                         axis=1)
-        self.payroll_by_calendar_year = self.payroll.groupby("year").agg(
-            {"pay_total_actual": "sum", "police_pay": "sum"}).T
+        self.payroll_by_year = self.payroll.groupby("year").agg({"pay_total_actual": "sum", "police_pay": "sum"}).T
         scraped = scrape_payroll('data/MBTA_pdfs/Payroll_Result_Jul21.json')
         for y in ["2015", "2017"]:
-            self.payroll_by_calendar_year.loc["pay_total_actual", int(y)] = scraped[y]["total_pay_actual"]
-            self.payroll_by_calendar_year.loc["police_pay", int(y)] = scraped[y]["police_pay"]
-        self.payroll_by_year[2016] = self.payroll_by_calendar_year.loc["police_pay", 2015]  # Missing data for 2016
-        self.payroll_by_year[2017] = self.payroll_by_calendar_year.loc["police_pay", 2017]
-        for y in self.year_range[2:]:
-            self.payroll_by_year.loc[y] = .5 * self.payroll_by_calendar_year.loc["police_pay", y - 1] + \
-                                          .5 * self.payroll_by_calendar_year.loc["police_pay", y]
+            self.payroll_by_year.loc["pay_total_actual", int(y)] = scraped[y]["total_pay_actual"]
+            self.payroll_by_year.loc["police_pay", int(y)] = scraped[y]["police_pay"]
+        # Set 2020 to NA because it hasn't finished yet, so we don't know total expenditures, will use same nums as 2019
+        self.payroll_by_year[2016] = np.NaN
+        self.payroll_by_year[2020] = np.NaN
+        self.payroll_by_year = self.payroll_by_year.loc[:, list(range(2015, 2021))]
+        self.final_payroll_by_year = self.payroll_by_year.loc["police_pay"]
+        self.final_payroll_by_year[2016] = self.final_payroll_by_year[2015]
 
     def get_police_pay(self, row):
         if "police" in row["position_title"].lower():
@@ -451,7 +370,7 @@ class PoliceDepartment(Agency):
 
     def __init__(self, alias, official_name, year_range):
         Agency.__init__(self, alias, official_name, year_range, "Police")
-        self.capital_expenditures_by_year = pd.Series(index=list(range(2016, 2020)), data=0)
+        self.capital_expenditures = pd.Series(index=list(range(2016, 2020)), data=0)
         self.operating_costs = pd.Series(index=year_range, data=0)
         self.correction_function = lambda x: x
 
@@ -507,23 +426,17 @@ class PoliceDepartment(Agency):
             PD_fraction_non_teacher[2016] = PD_fraction_non_teacher[2017] - \
                                             (PD_fraction_non_teacher[2018] - PD_fraction_non_teacher[2017])
         self.pensions = self.add_pension_costs(PD_fraction_non_teacher)
-        self.fringe, PD_fringe = self.add_fringe_benefits(PD_fraction_total)
+        self.fringe = self.add_fringe_benefits(PD_fraction_total)
         self.payroll = PD_payroll
-        self.payroll_by_year = total_earnings
-        self.payroll_expenditures_by_year = self.budget_summary.loc[
-            "Payroll Expenditures", list(range(2016, 2020))]  # Need to fix year range
+        self.payroll_expenditures_by_year = total_earnings
         if self.alias == "Chelsea PD":
-            self.payroll_by_year[2016] = self.budget_summary.loc["Payroll Budget", 2016]
             self.payroll_expenditures_by_year[2016] = self.budget_summary.loc["Payroll Budget", 2016]
 
         self.non_payroll_operating_expenditures_by_year = self.budget_summary.loc["Total Expenditures"] - \
-                                                          self.budget_summary.loc["Payroll Expenditures"] - PD_fringe
-        if self.alias == "Chelsea PD":
-            self.non_payroll_operating_expenditures_by_year[2016] = self.budget_summary.loc["Total Budget", 2016] - \
-                                                                    self.budget_summary.loc["Payroll Budget", 2016]
+                                                  self.budget_summary.loc["Payroll Expenditures"]
         self.non_payroll_operating_expenditures_by_year = \
             self.non_payroll_operating_expenditures_by_year.loc[list(range(2016, 2020))]
-        self.operating_costs = self.payroll_by_year + self.non_payroll_operating_expenditures_by_year
+        self.operating_costs = self.payroll_expenditures_by_year + self.non_payroll_operating_expenditures_by_year
 
     def scrape(self):
         file_path = saved_scraped_path + self.alias + ".csv"
@@ -532,20 +445,18 @@ class PoliceDepartment(Agency):
             self.budget_summary = pd.read_csv(file_path, index_col=0)
             self.budget_summary.columns = [int(x) for x in self.budget_summary.columns]
             if self.alias in ["Boston PD", "Chelsea PD"]:
-                self.capital_expenditures_by_year = pd.read_json(
-                    saved_scraped_path + self.alias + "_capital_expenditures.json",
-                    typ='series', orient='records')
+                self.capital_expenditures = pd.read_json(saved_scraped_path+self.alias+"_capital_expenditures.json",
+                                                         typ='series', orient='records')
         else:
             self.from_PDF()
             self.budget_summary.to_csv(file_path)
             if self.alias in ["Boston PD", "Chelsea PD"]:
-                self.capital_expenditures_by_year.to_json(
-                    saved_scraped_path + self.alias + "_capital_expenditures.json")
+                self.capital_expenditures.to_json(saved_scraped_path+self.alias+"_capital_expenditures.json")
 
-    def get_final_costs(self, apply_correction=True, add_hidden_costs=True, pensions_statewide=None):
+    def get_final_costs(self, add_hidden_costs=True, pensions_statewide=None):
         """Pensions_statewide shouldn't be passed in, better solution should be found but I'm up against deadline"""
 
-        return self.operating_costs + self.pensions + self.fringe + self.capital_expenditures_by_year
+        return self.operating_costs + self.pensions + self.fringe + self.capital_expenditures
 
     def add_budget_by_year(self, client=None):
         """Last updated by August 3rd"""
@@ -564,7 +475,7 @@ class BostonPD(PoliceDepartment):
         self.url_dict = url_dict  # Maps dataset alias to API url
         self.operating_budget = None  # From API
         self.mission = "The mission of the Police Department is Neighborhood Policing"
-        self.federal_expenditures_by_year = BostonPD_External_Funds_Correction().iloc[0, :]  # New August 14th
+        self.federal_private = BostonPD_External_Funds_Correction()  # New August 14th
         self.add_pension_costs = BostonPD_Pensions
         self.add_fringe_benefits = BostonPD_Fringe
         if self.url_dict:
@@ -580,7 +491,6 @@ class BostonPD(PoliceDepartment):
                                                                      "Total Expenditures"]).fillna(0)
         self.scrape()
         self.Add_True_Earnings()
-        self.get_final_costs()
 
     def from_PDF(self):
         """Last updated July 16th to pare down final budget summary df in a more clear way. To do: take out to_float()
@@ -615,8 +525,9 @@ class BostonPD(PoliceDepartment):
             if PD_section and payroll_signifier in budget_obj.getPage(i).extractText():
                 bp = budget_obj.getPage(i).extractText().replace("\n", " ")
                 total_dollar_amounts = self.bp_to_list(bp, "Grand Total")
-                if external and year - 2 in self.federal_expenditures_by_year.index:
-                    correction = 1 - self.federal_expenditures_by_year.loc[year - 2] / total_dollar_amounts[1]
+                if external and year - 2 in self.federal_private.columns:
+                    correction = 1 - self.federal_private.loc["Total Federal/Private Grant Expenditures",
+                                                              year - 2] / total_dollar_amounts[1]
                 self.update_budget_summary(year, total_dollar_amounts, "Overall", correction)
                 OT_dollar_amounts = self.bp_to_list(bp, "vertime")
                 self.update_budget_summary(year, OT_dollar_amounts, "OT", correction)
@@ -646,8 +557,9 @@ class BostonPD(PoliceDepartment):
             for i in range(2):
                 payroll_text = PD_text[payroll_position[i].start():]
                 overall_dollar_amounts = self.bp_to_list(payroll_text, "Grand Total")
-                if i == 1 and year - 2 in self.federal_expenditures_by_year.columns:
-                    correction = 1 - self.federal_expenditures_by_year.loc[year - 2] / overall_dollar_amounts[1]
+                if i == 1 and year - 2 in self.federal_private.columns:
+                    correction = 1 - self.federal_private.loc["Total Federal/Private Grant Expenditures",
+                                                              year - 2] / overall_dollar_amounts[1]
                 self.update_budget_summary(year, overall_dollar_amounts, "Overall", correction)
                 OT_dollar_amounts = self.bp_to_list(payroll_text, "vertime")
                 self.update_budget_summary(year, OT_dollar_amounts, "OT", correction)
@@ -661,7 +573,7 @@ class BostonPD(PoliceDepartment):
     def alt_get_dollar_amounts_payroll(self, year):
         """Need workaround for 2018 because OCR doesn't read it in right
         New July 16th: add external funds (second integer)"""
-        correction = 1 - self.federal_expenditures_by_year.loc[year - 2] / 9562319
+        correction = 1 - self.federal_private.loc["Total Federal/Private Grant Expenditures", year - 2] / 9562319
         self.budget_summary.loc["Payroll Budget", year] = 337939296 + 4789220 * correction
         self.budget_summary.loc["Payroll Appropriation", year - 1] = 328663838 + 4383901 * correction
         self.budget_summary.loc["Payroll Expenditures", year - 2] = 319608659 + 4387452 * correction
@@ -685,7 +597,6 @@ class BostonPD(PoliceDepartment):
             self.budget_summary.loc["Total Budget", year] += dollar_amounts[3]
             self.budget_summary.loc["Total Appropriation", year - 1] += dollar_amounts[2]
             self.budget_summary.loc["Total Expenditures", year - 2] += dollar_amounts[1]
-            print("for year", year, "boston had", dollar_amounts[1] * (1 - correction), "in federal spending")
         elif line_item == "OT":
             assert dollar_amounts is not None, "Dollar amounts for " + str(year) + " Boston PD overtime pay not found"
             self.budget_summary.loc["OT Budget", year] += dollar_amounts[3]
@@ -699,8 +610,8 @@ class BostonPD(PoliceDepartment):
 
     def update_capital_expenditures(self, year, dollar_amounts):
         """New August 20th to get capital expenditures in seperate attribute"""
-        print("got to update capital expenditures for year", year)
-        self.capital_expenditures_by_year[year - 2] = dollar_amounts[1]
+        print("got to update capital expenditures for year" , year)
+        self.capital_expenditures[year - 2] = dollar_amounts[1]
 
     def add_operating_budget(self):
         """Written by Sasha on June 23rd"""
@@ -759,7 +670,6 @@ class ChelseaPD(PoliceDepartment):
                                                                            "Total Expenditures"])
         self.scrape()
         self.Add_True_Earnings()
-        self.get_final_costs()
 
     def from_PDF(self):
         """Written by Sasha on July 2nd to iterate through the two budgets we have"""
@@ -824,9 +734,9 @@ class ChelseaPD(PoliceDepartment):
         elif line_item == "Capital":
             assert dollar_amounts is not None, "Dollar amounts for " + str(
                 year) + " Chelsea PD capital expenditures not found"
-            self.capital_expenditures_by_year[year - 2] = dollar_amounts[2]
-            self.capital_expenditures_by_year[year - 3] = dollar_amounts[1]
-            self.capital_expenditures_by_year[year - 4] = dollar_amounts[0]
+            self.capital_expenditures[year - 2] = dollar_amounts[2]
+            self.capital_expenditures[year - 3] = dollar_amounts[1]
+            self.capital_expenditures[year - 4] = dollar_amounts[0]
 
     def update_budget_summary_2020(self, year, dollar_amounts, line_item):
         """Written on July 7th during update"""
@@ -840,7 +750,7 @@ class ChelseaPD(PoliceDepartment):
 
         if line_item == "Capital":
             # Note that for 2016, we use budget instead of expenditures
-            self.capital_expenditures_by_year[year - 4] = dollar_amounts[0]
+            self.capital_expenditures[year - 4] = dollar_amounts[0]
 
 
 class ReverePD(PoliceDepartment):
@@ -868,27 +778,26 @@ class ReverePD(PoliceDepartment):
                                                                            "Payroll Adopted",
                                                                            "Total Adopted",
                                                                            "Total Expenditures"])
-        self.capital_expenditures_by_year = get_ReverePD_Capital_Costs()
+        self.capital_expenditures = get_ReverePD_Capital_Costs()
         self.scrape()
         self.pensions, self.PD_fraction = ReverePD_Pensions(
             self.budget_summary.loc["Payroll Adopted", list(range(2016, 2020))])
         self.fringe = ReverePD_Fringe(self.PD_fraction)
-        self.get_final_costs()
 
-    def get_final_costs(self, apply_correction=True, add_hidden_costs=True, pensions_statewide=None):
+    def get_final_costs(self, add_hidden_costs=True, pensions_statewide=None):
         """Pensions_statewide shouldn't be passed in, better solution should be found
         Note that we take budgeted dollars for payroll because the budgeted dollars are broken down by
         payroll vs non-payroll in a more precise way"""
         self.operating_costs = self.budget_summary.loc["Total Expenditures", list(range(2016, 2020))]
         self.operating_costs[2019] = self.budget_summary.loc["Total Adopted", 2019]
-        self.payroll_expenditures_by_year = self.budget_summary.loc["Payroll Adopted", list(range(2016, 2020))]
+        self.payroll_expenditures_by_year = self.budget_summary.loc["Payroll Adopted"]
         self.non_payroll_operating_expenditures_by_year = self.budget_summary.loc["Total Adopted"] - \
-                                                          self.budget_summary.loc["Payroll Adopted"]
+                                                  self.budget_summary.loc["Payroll Adopted"]
         self.non_payroll_operating_expenditures_by_year = \
             self.non_payroll_operating_expenditures_by_year.loc[list(range(2016, 2020))]
-        self.payroll_by_year = self.payroll_expenditures_by_year
+
         if add_hidden_costs:
-            return self.operating_costs + self.pensions + self.fringe + self.capital_expenditures_by_year
+            return self.operating_costs + self.pensions + self.fringe + self.capital_expenditures
         else:
             return self.budget_summary.loc["Total Budget"]
 
@@ -990,24 +899,22 @@ class WinthropPD(PoliceDepartment):
                                                                            "OT Expenditures",
                                                                            "Total Expenditures"])
         self.scrape()
-        self.payroll_final = self.budget_summary.loc["Payroll Expenditures", list(range(2016, 2020))]
+        self.payroll_final = self.budget_summary.loc["Payroll Expenditures"]
         self.payroll_final[2018] = self.budget_summary.loc["Payroll Budget", 2018]
-        self.capital_expenditures_by_year = pd.Series(index=list(range(2016, 2020)), data=[0, 39393, 40000, 0])
+        self.capital_expenditures = pd.Series(index=list(range(2016, 2020)), data=[0, 39393, 40000, 0])
         self.fringe, self.pensions = WinthropPD_Pensions_Benefits(ReverePD_fraction)
-        self.get_final_costs()
 
-    def get_final_costs(self, apply_correction=True, add_hidden_costs=True, pensions_statewide=None):
+    def get_final_costs(self, add_hidden_costs=True, pensions_statewide=None):
         """Written August 12th"""
         self.operating_costs = self.budget_summary.loc["Total Expenditures", list(range(2016, 2020))]
-        # self.operating_costs.loc[2018] = self.budget_summary.loc["Total Budget", 2018] - self.capital_expenditures_by_year.loc[
-        #     2018]
+        self.operating_costs.loc[2018] = self.budget_summary.loc["Total Budget", 2018] - self.capital_expenditures.loc[
+            2018]
         self.payroll_expenditures_by_year = self.budget_summary.loc["Payroll Expenditures", list(range(2016, 2020))]
-        # self.payroll_expenditures_by_year[2018] = self.budget_summary.loc["Payroll Budget", 2018]
+        self.payroll_expenditures_by_year[2018] = self.budget_summary.loc["Payroll Budget", 2018]
         self.non_payroll_operating_expenditures_by_year = self.operating_costs - self.payroll_expenditures_by_year - \
-                                                          self.capital_expenditures_by_year.loc[list(range(2016, 2020))]
-        self.payroll_by_year = self.payroll_expenditures_by_year
+                                                  self.capital_expenditures.loc[list(range(2016, 2020))]
         return self.operating_costs + self.fringe + self.pensions + \
-               self.capital_expenditures_by_year.loc[list(range(2016, 2020))]
+               self.capital_expenditures.loc[list(range(2016, 2020))]
 
     def from_PDF(self):
         """Written by Sasha on June 1st"""
@@ -1051,8 +958,7 @@ class WinthropPD(PoliceDepartment):
             self.budget_summary.loc["Payroll Expenditures", year - 3] = dollar_amounts[0]
 
     def hardcode_budget_summary(self, year):
-        """Updated Aug 20 to put capital expenditures in new attribute
-        Capital expenditures come from page 64 of 2019 budget pdf"""
+        """Updated Aug 20 to put capital expenditures in new attribute"""
         if year == 2016:
             capital_expenditures = 0
             self.budget_summary.loc["Total Recommended", year] = 2920019
@@ -1069,19 +975,19 @@ class WinthropPD(PoliceDepartment):
             self.budget_summary.loc["Total Expenditures", year] = 3191416 - capital_expenditures
             self.budget_summary.loc["OT Expenditures", year] = 376497
             self.budget_summary.loc["Payroll Expenditures", year] = 2927191
-            self.capital_expenditures_by_year.loc[2017] = capital_expenditures
+            self.capital_expenditures.loc[2017] = capital_expenditures
         if year == 2018:
             capital_expenditures = 40000
             self.budget_summary.loc["Total Recommended", year] = None  # Missing because no 2018 police budget
             self.budget_summary.loc["Total Budget", year] = 3500840
-            self.budget_summary.loc["Total Expenditures", year] = 3331505  # From FY21 Budget
+            self.budget_summary.loc["Total Expenditures", year] = None  # Missing because no 2020 budget
             self.budget_summary.loc["OT Recommended", year] = None  # Missing because no 2018 police budget
             # self.budget_summary.loc["OT Budget", year] = 290000
             self.budget_summary.loc["OT Expenditures", year] = None  # Missing because no 2020 budget
             self.budget_summary.loc["Payroll Recommended", year] = None  # Missing because no 2018 police budget
             # self.budget_summary.loc["Payroll Budget", year] = 3225884
-            self.budget_summary.loc["Payroll Expenditures", year] = 3066911  # From FY21 Budget
-            self.capital_expenditures_by_year.loc[2018] = capital_expenditures
+            self.budget_summary.loc["Payroll Expenditures", year] = None  # Missing because no 2020 budget
+            self.capital_expenditures.loc[2018] = capital_expenditures
         if year == 2019:
             capital_expenditures = 0
             self.budget_summary.loc["Total Recommended", year] = 3507071
