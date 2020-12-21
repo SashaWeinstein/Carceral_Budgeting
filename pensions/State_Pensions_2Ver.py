@@ -62,10 +62,11 @@ def by_umbrella(requery = False):
 
     return payouts_by_umbrella, as_pcnt_of_total(payouts_by_umbrella, cthru_pension_payouts), cthru_pension_payouts
 
-def by_agency(requery):
+def pensions_by_agency(requery):
     cthru_pension_payouts = get_cthru_pension_payouts(requery)
     pcnt_of_total = as_pcnt_of_total(cthru_pension_payouts, requery)
-    return pension_payments_statewide(pcnt_of_total, pension_contributions_by_year(requery))
+    contributions_by_year = pension_contributions_by_year(requery)
+    return pension_payments_statewide(pcnt_of_total, contributions_by_year), contributions_by_year
 
 def as_pcnt_of_total(cthru_pension_payouts, requery):
 

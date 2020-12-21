@@ -18,7 +18,7 @@ sys.path.insert(0, "/Users/alexanderweinstein/Documents/Harris/Summer2020/Carcer
 sys.path.insert(0, "/Users/alexanderweinstein/Documents/Harris/Summer2020/Carceral_Budgeting/Exploratory/pdf_scraper")
 sys.path.insert(0, "/Users/alexanderweinstein/Documents/Harris/Summer2020/Carceral_Budgeting/Exploratory/"
                    "capital_costs")
-from State_Pensions_2Ver import by_agency
+from State_Pensions_2Ver import pensions_by_agency
 from LocalPD_True_Payroll import True_Earnings
 from MBTA_Payroll_Scraper import scrape_payroll
 from Local_PD_Pensions import BostonPD_Pensions, ChelseaPD_Pensions, ReverePD_Pensions, WinthropPD_Pensions_Benefits
@@ -37,10 +37,17 @@ client = Socrata("cthru.data.socrata.com", app_token)
 client.timeout = 40
 
 # To-Do: maybe move this code to initialize agencies? Makes more logical sense there
-pensions_statewide = by_agency(False)
+pensions_statewide, contributions_by_year = pensions_by_agency(False)
 total_statewide_payroll = Total_Statewide_Payroll(client)
 total_statewide_fringe = Total_Statewide_Fringe(client)
 DCP_capital_expenditures = get_capital_expenditures(client)
+
+print("pensions statewide are")
+display(pensions_statewide)
+print("pension contributions by year")
+display(contributions_by_year)
+print("total statewide payroll is")
+display(total_statewide_payroll)
 
 
 class Agency():
@@ -68,6 +75,7 @@ class Agency():
             self.correction_function = correction_function
         else:
             self.correction_function = lambda x: x
+        #To do: this should go in it's own method for symmetry's sake
         if self.alias in pensions_statewide.index:
             self.pensions = pensions_statewide.loc[self.alias, self.year_range]
         else:
@@ -171,8 +179,19 @@ class StateAgency(Agency):
             if self.alias in DCP_capital_expenditures.index:
                 self.capital_expenditures_by_year += DCP_capital_expenditures.loc[self.alias, self.year_range]
 
+            #To do: move this code it it's own method
+            if self.alias == "DOC":
+                print("got to code to correct pensions")
+                fraction = self.payroll_by_year/total_statewide_payroll[self.year_range]
+                pension= contributions_by_year[self.year_range] * fraction
+                print("got fraction ", fraction)
+                print("got final pension of", self.alias)
+                self.pensions = pension
+
+
+
             self.final_cost = self.payroll_by_year + self.non_payroll_operating_expenditures_by_year + \
-                              self.settlements + self.fringe + \
+                              self.pensions + self.fringe + \
                               self.capital_expenditures_by_year
 
         if apply_correction:
@@ -411,6 +430,10 @@ class MBTA(StateAgency):
         if self.payroll_by_year.sum() == 0:
             self.add_payroll_by_year()
 
+        fraction = self.payroll_by_year / total_statewide_payroll[self.year_range]
+        pension = contributions_by_year[self.year_range] * fraction
+        self.pensions = pension
+
         self.payroll_expenditures_by_year = self.operating_costs
         self.non_payroll_operating_expenditures_by_year = pd.Series(index=list(range(2016, 2020)), data=0)
         final = self.payroll_by_year + self.non_payroll_operating_expenditures_by_year \
@@ -431,6 +454,7 @@ class MBTA(StateAgency):
             self.payroll_by_calendar_year.loc["police_pay", y] = scraped[y]["police_pay"]
         self.payroll_by_year[2016] = self.payroll_by_calendar_year.loc["police_pay", 2015]  # Missing data for 2016
         self.payroll_by_year[2017] = self.payroll_by_calendar_year.loc["police_pay", 2017]
+
         for y in self.year_range[2:]:
             self.payroll_by_year.loc[y] = .5 * self.payroll_by_calendar_year.loc["police_pay", y - 1] + \
                                           .5 * self.payroll_by_calendar_year.loc["police_pay", y]

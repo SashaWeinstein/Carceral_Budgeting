@@ -12,7 +12,7 @@ def Total_Statewide_Payroll(client):
     total_payroll.loc[:, "pay_total_actual"] = total_payroll.loc[:, "pay_total_actual"].astype(float)
     total_payroll.loc[:, "year"] = total_payroll.loc[:, "year"].astype(int)
     total_payroll_by_calendar_year = total_payroll.groupby("year").sum()["pay_total_actual"]
-    total_payroll_by_fiscal_year = pd.Series(yr)
+    total_payroll_by_fiscal_year = pd.Series(index=yr)
     for y in yr:
         total_payroll_by_fiscal_year.loc[y] = .5 * total_payroll_by_calendar_year.loc[y-1] + \
                                               .5 * total_payroll_by_calendar_year.loc[y]
