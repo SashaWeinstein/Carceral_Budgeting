@@ -348,6 +348,7 @@ class CPCS(StateAgency):
         StateAgency.__init__(self, alias, official_name, year_range, category, correction_function, settlement_agencies,
                              payroll_vendors, None, client)
 
+
     def get_final_costs(self, apply_correction=True):
         """Created August 12 for new methodology where we use expenditures for everything"""
         if not self.final_costs_calculated:
@@ -359,7 +360,7 @@ class CPCS(StateAgency):
             self.add_settlements()
             self.add_payroll_by_year()
             self.add_fringe()
-
+            self.payroll_by_year += self.R24_by_year #This is dangerous but it's ok for now. After refactor, cthru_payroll_by_year and final_payroll_by_year should be split into two categories
             self.operating_costs = self.expenditures_by_year.loc["Total Expenditures"]
             # New Aug 24th: split operating costs into payroll, non-payroll
 
@@ -380,20 +381,16 @@ class CPCS(StateAgency):
         public_counsel = self.expenditures[(self.expenditures["object_code"] == "(R24) PUBLIC COUNSEL") &
                                            (self.expenditures["vendor"].str.contains("(?i)payroll") == False)]
         self.expenditures = self.expenditures[self.expenditures["object_code"] != "(R24) PUBLIC COUNSEL"]
-        self.payroll_by_year = public_counsel.groupby("budget_fiscal_year").sum()["amount"].loc[self.year_range]
-        print("payroll from public counsel")
-        display(self.payroll_by_year)
+        self.R24_by_year = public_counsel.groupby("budget_fiscal_year").sum()["amount"].loc[self.year_range]
+
 
     def add_payroll_by_year(self, total_OT_only=False):
         """Special version of this function for CPCS gets payroll by year already created in RR_correction and populated
         with public counsel spending"""
         self.add_payroll(total_OT_only)
         payroll_by_calendar_year = self.payroll.groupby("year")[self.pay_col].sum().T
-        print("payroll from payroll dataset")
-        display(payroll_by_calendar_year)
         for y in self.year_range:
-            self.payroll_by_year[y] = self.payroll_by_year[y] + \
-                                      .5 * payroll_by_calendar_year.loc["pay_total_actual", y - 1] + \
+            self.payroll_by_year[y] = .5 * payroll_by_calendar_year.loc["pay_total_actual", y - 1] + \
                                       .5 * payroll_by_calendar_year.loc["pay_total_actual", y]
 
 
@@ -428,10 +425,10 @@ class MBTA(StateAgency):
                                                         axis=1)
         self.payroll_by_calendar_year = self.payroll.groupby("year").agg(
             {"pay_total_actual": "sum", "police_pay": "sum"}).T
-        scraped = scrape_payroll('data/MBTA_pdfs/Payroll_Result_Jul21.json')
-        for y in ["2015", "2017"]:
-            self.payroll_by_calendar_year.loc["pay_total_actual", int(y)] = scraped[y]["total_pay_actual"]
-            self.payroll_by_calendar_year.loc["police_pay", int(y)] = scraped[y]["police_pay"]
+        scraped = scrape_payroll('data/MBTA_pdfs/Scraper_Results_Dec20.json', False)
+        for y in [2015, 2017]:
+            self.payroll_by_calendar_year.loc["pay_total_actual", y] = scraped[y]["total_pay_actual"]
+            self.payroll_by_calendar_year.loc["police_pay", y] = scraped[y]["police_pay"]
         self.payroll_by_year[2016] = self.payroll_by_calendar_year.loc["police_pay", 2015]  # Missing data for 2016
         self.payroll_by_year[2017] = self.payroll_by_calendar_year.loc["police_pay", 2017]
         for y in self.year_range[2:]:
@@ -439,7 +436,8 @@ class MBTA(StateAgency):
                                           .5 * self.payroll_by_calendar_year.loc["police_pay", y]
 
     def get_police_pay(self, row):
-        if "police" in row["position_title"].lower():
+        position = row["position_title"].lower()
+        if "police" in position or "sergeant" in position:
             return row["pay_total_actual"]
         else:
             return 0
