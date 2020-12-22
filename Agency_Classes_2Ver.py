@@ -42,14 +42,6 @@ total_statewide_payroll = Total_Statewide_Payroll(client)
 total_statewide_fringe = Total_Statewide_Fringe(client)
 DCP_capital_expenditures = get_capital_expenditures(client)
 
-print("pensions statewide are")
-display(pensions_statewide)
-print("pension contributions by year")
-display(contributions_by_year)
-print("total statewide payroll is")
-display(total_statewide_payroll)
-
-
 class Agency():
     """For keeping track of info associated with a government agency
     New July 17th: category attribute. I'm grouping the agencies into three categories:
@@ -181,11 +173,8 @@ class StateAgency(Agency):
 
             #To do: move this code it it's own method
             if self.alias == "DOC":
-                print("got to code to correct pensions")
                 fraction = self.payroll_by_year/total_statewide_payroll[self.year_range]
                 pension= contributions_by_year[self.year_range] * fraction
-                print("got fraction ", fraction)
-                print("got final pension of", self.alias)
                 self.pensions = pension
 
 
@@ -528,6 +517,12 @@ class PoliceDepartment(Agency):
         if 2016 not in PD_fraction_non_teacher.index:
             PD_fraction_non_teacher[2016] = PD_fraction_non_teacher[2017] - \
                                             (PD_fraction_non_teacher[2018] - PD_fraction_non_teacher[2017])
+        print("in add true earnings for ", self.alias)
+        print("PD fraction non-teacher is ")
+        display(PD_fraction_non_teacher)
+        print("PD fraction overall is")
+        display(PD_fraction_total)
+        print()
         self.pensions = self.add_pension_costs(PD_fraction_non_teacher)
         self.fringe, PD_fringe = self.add_fringe_benefits(PD_fraction_total)
         self.payroll = PD_payroll

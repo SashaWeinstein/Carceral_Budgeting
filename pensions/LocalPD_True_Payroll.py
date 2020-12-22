@@ -2,12 +2,32 @@
 This link https://bmrb.org/wp-content/uploads/2016/05/SR03-3.pdf says all quinn money comes from state"""
 
 import pandas as pd
+
 to_float_cols = ["REGULAR", "RETRO", "OTHER", "OVERTIME",
-                 "INJURED", "DETAIL","QUINN/EDUCATION INCENTIVE", "TOTAL EARNINGS"]
+                 "INJURED", "DETAIL", "QUINN/EDUCATION INCENTIVE", "TOTAL EARNINGS"]
 
 big_path = "/Users/alexanderweinstein/Documents/Harris/Summer2020/Carceral_Budgeting/Exploratory/data/"
 
-school_titles = ["Teacher", "Substitute Teacher", "Principal Elementary", "Headmaster"]
+"""
+School titles list is from
+From https://mtrs.state.ma.us/service/mtrs-membership-eligibility/
+Another thing to think about: do principals and headmasters get MSTR accounts? 
+Position titles that are eligible for membership by definition are:
+
+School psychologist
+School psychiatrist
+School adjustment counselor
+School social worker appointed under Chapter 71, §46G
+Director of occupational guidance and placement appointed under Chapter 71, §38A or §38D
+Principal (also, assistant principal)
+Supervisor* or superintendent in any public school (also, assistant superintendent)
+Supervisor* or teacher of adult civic education
+ *A “supervisor” is generally considered to be a person who supervises other “teachers.”
+"""
+school_titles = ["Teacher", "Principal", "Headmaster", "Superintendent", "Counselor", "Social Worker"]
+school_departments = ["BPS", "K-8", "High", "Middle", "Elementary", "Academy", "School"]
+title_regex = '(?i)' + '|(?i)'.join(school_titles)
+dept_regex = '(?i)' + '|(?i)'.join(school_departments)
 
 def Boston_total_earnings():
     """Data is from https://data.boston.gov/dataset/employee-earnings-report """
@@ -23,22 +43,22 @@ def Boston_total_earnings():
         if year == 2017:
             earnings.rename(columns={"DEPARTMENT NAME": "DEPARTMENT_NAME"}, inplace=True)
         if year == 2015:
-            earnings.rename(columns={"DETAILS":"DETAIL"}, inplace=True)
+            earnings.rename(columns={"DETAILS": "DETAIL"}, inplace=True)
         earnings[to_float_cols] = earnings[to_float_cols].applymap(string_to_float(year))
         boston_earnings = boston_earnings.append(earnings)
     boston_earnings = boston_earnings.rename(columns={"DEPARTMENT_NAME": "department"})
     return boston_earnings
 
-def remove_schools(df, city):
-    if city =="Boston":
-        return df[(df["TITLE"].isin(school_titles) == False) &
-                  (df["department"].str.contains("BPS") == False) &
-                  (df["department"].str.contains("K-8") == False) &
-                  (df["department"].str.contains("High") == False) &
-                  (df["department"].str.contains("Middle") == False) &
-                  (df["department"].str.contains("Elementary")==False)]
-    elif city == "Chelsea":
-        return df[df["entity"] != "School"]
+
+def remove_schools(df, city, title_column):
+    """This link https://mtrs.state.ma.us/service/mtrs-membership-eligibility/#:~:text=Charter%20school%20employees&text=Charter%20school%20teachers%20are%20eligible,to%20be%20ESE%20certified%20%5BM.G.L.&text=71%2C%20%C2%A789(y)%5D,as%20a%20charter%20school%20teacher.
+    says that charter school employees are eligible for MRTS so they should be excluded here"""
+    #During refactor this should be pared down to one block of code
+    MTRS = (df[title_column].str.contains(title_regex) &
+            df["department"].str.contains(dept_regex))
+    df["MTRS"] = MTRS
+    MTRS_employees = df[df["MTRS"] == True]
+    return df[df["MTRS"] == False], MTRS_employees
 
 def Chelsea_Total_Earnings():
     "Data is from https://chelseama.payroll.socrata.com/#!/year/2017/full_time_employees,others/pay1,pay2,pay3/explore/1-0-0/segment2?x-return-url=https:%2F%2Fchelseama.finance.socrata.com%2F%23!%2Fdashboard&x-return-description=Return%20to%20Open%20Finance"
@@ -54,51 +74,60 @@ def Chelsea_Total_Earnings():
     chelsea_paycheck["fiscalyear"] = chelsea_paycheck["fiscalyear"].astype(int)
     return chelsea_paycheck
 
+
 def True_Earnings(agency_alias):
     """Town must be Boston or Chelsea"""
-    assert agency_alias in ["Boston PD", "Chelsea PD"], "True Earnings only available for Boston and Chelsea not " + agency_alias
+    assert agency_alias in ["Boston PD",
+                            "Chelsea PD"], "True Earnings only available for Boston and Chelsea not " + agency_alias
     if agency_alias == "Boston PD":
         return PD_Fraction_of_Total(Boston_total_earnings(), "year", "Boston",
-                                    "Boston Police Department", "TOTAL EARNINGS")
+                                    "Boston Police Department", "TOTAL EARNINGS", "TITLE")
     elif agency_alias == "Chelsea PD":
         """Code to fill missing data added to this function on Aug 24"""
-        total_earnings, PD_fraction_non_teacher, PD_fraction_total, PD_payroll = PD_Fraction_of_Total(Chelsea_Total_Earnings(),
-                                                                                          "fiscalyear", "Chelsea",
-                                                                                          "POLICE DEPARTMENT",
-                                                                                          "totalpay")
-        PD_fraction_non_teacher[2016] = PD_fraction_non_teacher[2017] - \
-                                        (PD_fraction_non_teacher[2018] - PD_fraction_non_teacher[2017])
+        total_earnings, PD_fraction_non_teacher, PD_fraction_total, PD_payroll = PD_Fraction_of_Total(
+            Chelsea_Total_Earnings(),
+            "fiscalyear", "Chelsea",
+            "POLICE DEPARTMENT",
+            "totalpay", "position")
+
         return total_earnings, PD_fraction_non_teacher, PD_fraction_total, PD_payroll
 
-def PD_Fraction_of_Total(total_earnings, year_col, city, dept_name, earnings_col):
+
+def PD_Fraction_of_Total(total_earnings, year_col, city, dept_name, earnings_col, title_col):
     """Methodology for Chelsea is pretty confusing. For Chelsea we have 2016 FY data and calendar year payroll data
     for 2017, 2018, 2019. So Methodology is to use FY16 payroll data for 2016, 2017 calendar year data only for FY 2017,
-    and usual methodology for 2018 and 2019"""
-    if city == "Boston":
-        yr = list(range(2016, 2020))
-    elif city == "Chelsea":
-        yr = list(range(2018, 2020))
+    and usual methodology for 2018 and 2019
+    Important note: earnings for Boston are by calendar year and earnings for Chelsea are by fiscal year.
+    When police, citywide non-teacher, and citywide are grouped by year they are assigned to something_by_year
+    The variables something_by_FY hold the fiscal year data. For Chelsea they are same as original group by
+    """
+    yr = list(range(2016,2020))
     PD_total_earnings = total_earnings[total_earnings["department"] == dept_name]
-    PD_by_calendar_year = PD_total_earnings.groupby(year_col).sum()[earnings_col]
-    total_by_calendar_year = total_earnings.groupby(year_col).sum()[earnings_col]
-    no_teachers = remove_schools(total_earnings, city)
-    total_no_teachers_by_calendar_year = no_teachers.groupby(year_col).sum()[earnings_col]
+    PD_by_year = PD_total_earnings.groupby(year_col).sum()[earnings_col]
+    total_by_year = total_earnings.groupby(year_col).sum()[earnings_col]
+    no_teachers, _ = remove_schools(total_earnings, city, title_col)
+    total_no_teachers_by_year = no_teachers.groupby(year_col).sum()[earnings_col]
 
-    PD_by_year = pd.Series(index=yr)
-    total_no_teachers_by_year = pd.Series(index=yr)
-    total_by_year = pd.Series(index=yr)
+    # Need to fix this during refactor to not be ugly
     if city == "Chelsea":
-        PD_by_year.loc[2017] = PD_by_calendar_year.loc[2017]
-        total_no_teachers_by_year.loc[2017] = total_no_teachers_by_calendar_year.loc[2017]
-        total_by_year.loc[2017] = total_by_calendar_year.loc[2017]
-    for y in yr:
-        PD_by_year.loc[y] = .5*PD_by_calendar_year.loc[y-1] + .5*PD_by_calendar_year.loc[y]
-        total_no_teachers_by_year = .5*total_no_teachers_by_calendar_year.loc[y-1] + \
-                                    .5*total_no_teachers_by_calendar_year[y]
-        total_by_year = .5*total_by_calendar_year[y-1] + .5*total_by_calendar_year[y]
+        # 2016 data is assumed to be 2017 minus difference between 2018 and 2017
+        PD_by_year[2016] = PD_by_year[2017] - (PD_by_year[2018] - PD_by_year[2017])
+        total_by_year[2016] = total_by_year[2017] - (total_by_year[2018] - total_by_year[2017])
+        total_no_teachers_by_year[2016] = total_no_teachers_by_year[2017] - \
+                                          (total_no_teachers_by_year[2018] - total_no_teachers_by_year[2017])
+        return PD_by_year, PD_by_year / total_no_teachers_by_year, PD_by_year / total_by_year, PD_total_earnings
+    elif city=="Boston":
+        # Following code should be extracted to function that averages calendar years
+        PD_by_FY = pd.Series(index=yr)
+        total_no_teachers_by_FY = pd.Series(index=yr)
+        total_by_FY = pd.Series(index=yr)
 
-    return PD_by_year, PD_by_year/total_no_teachers_by_year, PD_by_year/total_by_year, PD_total_earnings
-
+        for y in yr:
+            PD_by_FY.loc[y] = .5 * PD_by_year.loc[y - 1] + .5 * PD_by_year.loc[y]
+            total_no_teachers_by_FY = .5 * total_no_teachers_by_year.loc[y - 1] + \
+                                        .5 * total_no_teachers_by_year[y]
+            total_by_FY = .5 * total_by_year[y - 1] + .5 * total_by_year[y]
+        return PD_by_FY, PD_by_FY / total_no_teachers_by_FY, PD_by_FY / total_by_FY, PD_total_earnings
 
 
 def get_numeric(x):
@@ -111,6 +140,7 @@ def get_numeric(x):
     if not out or out == ".":
         return 0
     return out
+
 
 def string_to_float(year):
     if year == 2019:
