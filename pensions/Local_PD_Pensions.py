@@ -57,7 +57,10 @@ def ChelseaPD_Pensions(PD_fraction):
 
 
 def ReverePD_Pensions(reverePD_payroll):
-    """ReverePD_Payroll comes from budget pdfs"""
+    """ReverePD_Payroll comes from budget pdfs
+    Based on section for Revere public schools, they have their own system of health insurance and pensions so it's correct
+    to exclude. "Total" here really means total non-public schools
+    """
     pension_contributions = pd.DataFrame(columns=list(range(2016, 2021)),
                                          index=["Pension Expenditure",
                                                 "Pension Appropriation",
@@ -74,6 +77,7 @@ def ReverePD_Pensions(reverePD_payroll):
     pension_contributions.loc["Pension Recap Estimated", 2016] = 10492643
     pension_contributions.loc["Pension Recommended", 2017] = 11033908
 
+    #On page 29
     total_payroll.loc["Total Payroll Appropriation", 2016] = 27190424
     total_payroll.loc["Total Payroll Request", 2017] = 26970488
 
@@ -82,6 +86,7 @@ def ReverePD_Pensions(reverePD_payroll):
     pension_contributions.loc["Pension Recap Estimated", 2017] = 11033908
     pension_contributions.loc["Pension Expenditure", 2016] = 10492643
 
+    #On page 25
     total_payroll.loc["Total Payroll Appropriation", 2017] = 26989489
     total_payroll.loc["Total Payroll Request", 2018] = 27909365
 

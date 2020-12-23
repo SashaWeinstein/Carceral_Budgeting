@@ -27,6 +27,7 @@ from Statewide_Fringe import Total_Statewide_Payroll, Total_Statewide_Fringe
 from LocalPD_External_Funds import BostonPD_External_Funds_Correction
 from DCP_Capital import get_capital_expenditures
 from ReverePD_Capital_Costs import get_ReverePD_Capital_Costs
+from Agency_Corrections import trial_court_pcnt_criminal
 
 data_dir_path = "/Users/alexanderweinstein/Documents/Harris/Summer2020/Carceral_Budgeting/Exploratory/data/"
 saved_scraped_path = "/Users/alexanderweinstein/Documents/Harris/Summer2020/Carceral_Budgeting/Exploratory" \
@@ -41,6 +42,10 @@ pensions_statewide, contributions_by_year = pensions_by_agency(False)
 total_statewide_payroll = Total_Statewide_Payroll(client)
 total_statewide_fringe = Total_Statewide_Fringe(client)
 DCP_capital_expenditures = get_capital_expenditures(client)
+
+print("pensions statewide are ")
+display(pensions_statewide)
+
 
 class Agency():
     """For keeping track of info associated with a government agency
@@ -67,9 +72,15 @@ class Agency():
             self.correction_function = correction_function
         else:
             self.correction_function = lambda x: x
-        #To do: this should go in it's own method for symmetry's sake
-        if self.alias in pensions_statewide.index:
-            self.pensions = pensions_statewide.loc[self.alias, self.year_range]
+        self.local_pensions = pd.Series(index=self.year_range, data=0)  # New Dec 22
+        #To do during big refactor: this should go in it's own method for symmetry's sake
+        if self.alias in pensions_statewide.index or self.alias == "trial_court":
+            #To do during refator: this should go in separate trial court class
+            if self.alias == "trial_court":
+                self.pensions = pensions_statewide.loc["trial_court_statewide", self.year_range]
+                self.local_pensions = pensions_statewide.loc["trial_court_local", self.year_range]
+            else:
+                self.pensions = pensions_statewide.loc[self.alias, self.year_range]
         else:
             self.pensions = pd.Series(index=self.year_range, data=0)
         self.fringe = pd.Series(index=self.year_range, data=0)
@@ -139,6 +150,7 @@ class StateAgency(Agency):
         self.non_hidden_fringe = pd.DataFrame()  # New Nov 9th
         self.non_hidden_fringe_by_year = pd.Series(index=self.year_range, data=0)
         self.calender_year_data = True  # New June 24th
+
         self.payroll = None  # New on June 22nd
         self.payroll_by_year = pd.Series(index=self.year_range, data=None)
         self.pay_col = None  # List of column names to keep and sum payroll info over
@@ -174,16 +186,20 @@ class StateAgency(Agency):
             #To do: move this code it it's own method
             if self.alias == "DOC":
                 fraction = self.payroll_by_year/total_statewide_payroll[self.year_range]
-                pension= contributions_by_year[self.year_range] * fraction
+                pension = contributions_by_year[self.year_range] * fraction
                 self.pensions = pension
-
-
+            #For refactor move this code it it's own method
+            if self.alias =="trial_court":
+                pcnt_criminal_correction = trial_court_pcnt_criminal()
+                print("percent criminal correction for trial court local pensions", pcnt_criminal_correction)
 
             self.final_cost = self.payroll_by_year + self.non_payroll_operating_expenditures_by_year + \
                               self.pensions + self.fringe + \
                               self.capital_expenditures_by_year
 
         if apply_correction:
+            if self.alias == "trial_court":
+                return self.correction_function(self.final_cost) + self.local_pensions*pcnt_criminal_correction  #Janky but should work
             return self.correction_function(self.final_cost)
         else:
             return self.final_cost
@@ -517,12 +533,6 @@ class PoliceDepartment(Agency):
         if 2016 not in PD_fraction_non_teacher.index:
             PD_fraction_non_teacher[2016] = PD_fraction_non_teacher[2017] - \
                                             (PD_fraction_non_teacher[2018] - PD_fraction_non_teacher[2017])
-        print("in add true earnings for ", self.alias)
-        print("PD fraction non-teacher is ")
-        display(PD_fraction_non_teacher)
-        print("PD fraction overall is")
-        display(PD_fraction_total)
-        print()
         self.pensions = self.add_pension_costs(PD_fraction_non_teacher)
         self.fringe, PD_fringe = self.add_fringe_benefits(PD_fraction_total)
         self.payroll = PD_payroll
