@@ -34,7 +34,7 @@ carceral_departments = {"trial_court_local": ["Suffolk Superior Court",
                                                   "Juvenile Court Administration",
                                                   "Trial Court Cse Unit",
                                                   "Trial Court Law Libraries"],
-                        "state_police": ["State Police"],
+                        "state_police": ["State Police", "Mass Turnpike Auth.st.police"],
                         "Parole_Board": ["Parole Board"],
                         "Supreme_Judicial_Court": ["Supreme Judicial Court"],
                         "Appeals_Court": ["Appeals CourT-John Adams Court"]}
@@ -54,7 +54,7 @@ def get_cthru_pension_payouts(requery):
                                "cthru_retirement_benefits.csv")
     cthru_pensions = clean_pensions(cthru_pensions)
 
-    agency_classes = cthru_pensions.apply(lambda x: find_agency(x["department"], x["title_at_retirement"]), axis=1)
+    agency_classes = cthru_pensions.apply(lambda x: find_agency(x["department"]), axis=1)
     cthru_pensions["agency_class"] = agency_classes
     return cthru_pensions
 
@@ -144,7 +144,7 @@ def find_umbrella(val, title):
             return "state_police"
     return np.NaN
 
-def find_agency(dept, title):
+def find_agency(dept):
     """Created in Version 2 to get agency class for each payment"""
     if dept == "Suffolk Sheriff's Office":
         return "Suffolk_Sheriff"
@@ -164,8 +164,6 @@ def find_agency(dept, title):
         return "trial_court_statewide"
     if dept in carceral_departments["trial_court_local"]:
         return "trial_court_local"
-    if dept == "State Police":
+    if dept in carceral_departments["state_police"]:
         return "State_Police"
-    if "State Police" in title and "Dispatcher" not in title:
-        return "state_police"
     return None
