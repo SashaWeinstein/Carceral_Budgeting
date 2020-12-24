@@ -76,6 +76,18 @@ class Agency():
             if self.alias == "trial_court":
                 self.pensions = pensions_statewide.loc["trial_court_statewide", self.year_range]
                 self.local_pensions = pensions_statewide.loc["trial_court_local", self.year_range]
+            elif self.alias =="Suffolk_Sheriff":
+                # To-do: move this to sheriff object
+                """Added august 12th to account for City of Boston's obligations to retirees of suffolk sheriff's office. From
+                    Boston state budget:
+                         State legislation converted all existing and future Suffolk County Sheriff employees to state employees
+                         effective January 1, 2010. The State charges the City for Suffolk County through an assessment based on the
+                        residual unfunded pension liability for former Sherriff employees who retired prior to January 1, 2010.
+                        Once the unfunded pension liability is fully extinguished, the budget for Suffolk County
+                        will no longer be necessary.
+                """
+                self.pensions = pensions_statewide.loc[self.alias, self.year_range] + 3.87*(10**6)
+
             else:
                 self.pensions = pensions_statewide.loc[self.alias, self.year_range]
         else:
@@ -333,11 +345,6 @@ class StateAgency(Agency):
         self.non_hidden_fringe_by_year = self.non_hidden_fringe.groupby("budget_fiscal_year").sum()["amount"].T
         self.non_hidden_fringe_by_year = self.non_hidden_fringe_by_year.reindex(self.year_range, fill_value=0)
         hidden_fringe = pcnt_by_year * total_statewide_fringe
-        if self.alias == "State_Police":
-            print("non-hidden fringe:")
-            print(self.non_hidden_fringe_by_year)
-            print("hidden fringe:")
-            print(hidden_fringe)
         self.fringe = hidden_fringe.loc[self.year_range] + self.non_hidden_fringe_by_year
 
     def construct_expenditures_SOQL(self):
@@ -535,7 +542,7 @@ class PoliceDepartment(Agency):
             PD_fraction_non_teacher[2016] = PD_fraction_non_teacher[2017] - \
                                             (PD_fraction_non_teacher[2018] - PD_fraction_non_teacher[2017])
         self.pensions = self.add_pension_costs(PD_fraction_non_teacher)
-        self.fringe, PD_fringe = self.add_fringe_benefits(PD_fraction_total)
+        self.fringe, fringe_PD_budget = self.add_fringe_benefits(PD_fraction_total)
         self.payroll = PD_payroll
         self.payroll_by_year = total_earnings
         self.payroll_expenditures_by_year = self.budget_summary.loc[
@@ -543,9 +550,9 @@ class PoliceDepartment(Agency):
         if self.alias == "Chelsea PD":
             self.payroll_by_year[2016] = self.budget_summary.loc["Payroll Budget", 2016]
             self.payroll_expenditures_by_year[2016] = self.budget_summary.loc["Payroll Budget", 2016]
-
+        print("Boston's ")
         self.non_payroll_operating_expenditures_by_year = self.budget_summary.loc["Total Expenditures"] - \
-                                                          self.budget_summary.loc["Payroll Expenditures"] - PD_fringe
+                                                          self.budget_summary.loc["Payroll Expenditures"] - fringe_PD_budget
         if self.alias == "Chelsea PD":
             self.non_payroll_operating_expenditures_by_year[2016] = self.budget_summary.loc["Total Budget", 2016] - \
                                                                     self.budget_summary.loc["Payroll Budget", 2016]
