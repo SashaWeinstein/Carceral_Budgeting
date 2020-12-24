@@ -29,4 +29,6 @@ def Total_Statewide_Fringe(client):
                                   limit=999999))
     GIC.loc[:, "amount"] = GIC.loc[:, "amount"].astype(float)
     GIC.loc[:, "budget_fiscal_year"] = GIC.loc[:, "budget_fiscal_year"].astype(int)
+    GIC = GIC[GIC["appropriation_type"].str.contains("(?i)federal") == False]
+    GIC = GIC[GIC["object_code"] =="(D06) EMPLOYEE HEALTH & LIFE INSURANCE"]
     return GIC.groupby("budget_fiscal_year").sum()["amount"]

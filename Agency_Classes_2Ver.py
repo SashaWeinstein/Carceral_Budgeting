@@ -43,9 +43,6 @@ total_statewide_payroll = Total_Statewide_Payroll(client)
 total_statewide_fringe = Total_Statewide_Fringe(client)
 DCP_capital_expenditures = get_capital_expenditures(client)
 
-print("pensions statewide are ")
-display(pensions_statewide)
-
 
 class Agency():
     """For keeping track of info associated with a government agency
@@ -191,7 +188,6 @@ class StateAgency(Agency):
             #For refactor move this code it it's own method
             if self.alias =="trial_court":
                 pcnt_criminal_correction = trial_court_pcnt_criminal()
-                print("percent criminal correction for trial court local pensions", pcnt_criminal_correction)
 
             self.final_cost = self.payroll_by_year + self.non_payroll_operating_expenditures_by_year + \
                               self.pensions + self.fringe + \
@@ -337,6 +333,11 @@ class StateAgency(Agency):
         self.non_hidden_fringe_by_year = self.non_hidden_fringe.groupby("budget_fiscal_year").sum()["amount"].T
         self.non_hidden_fringe_by_year = self.non_hidden_fringe_by_year.reindex(self.year_range, fill_value=0)
         hidden_fringe = pcnt_by_year * total_statewide_fringe
+        if self.alias == "State_Police":
+            print("non-hidden fringe:")
+            print(self.non_hidden_fringe_by_year)
+            print("hidden fringe:")
+            print(hidden_fringe)
         self.fringe = hidden_fringe.loc[self.year_range] + self.non_hidden_fringe_by_year
 
     def construct_expenditures_SOQL(self):
@@ -701,11 +702,8 @@ class BostonPD(PoliceDepartment):
 
     def update_budget_summary(self, year, dollar_amounts, line_item, correction):
         """Updated by Sasha on August 17th to correct for federal/private dollars in federal funds"""
-        print("got to update budget summary for year ", year, " correction is ", correction)
-        print("dollar amounts before correction ", dollar_amounts)
         if correction:
             dollar_amounts = [x * correction for x in dollar_amounts]
-        print("dollar amounts after correction ", dollar_amounts)
 
         if line_item == "Overall":
             assert dollar_amounts is not None, "Dollar amounts for " + str(year) + " Boston operating budget not found"

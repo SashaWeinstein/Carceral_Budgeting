@@ -34,7 +34,7 @@ carceral_departments = {"trial_court_local": ["Suffolk Superior Court",
                                                   "Juvenile Court Administration",
                                                   "Trial Court Cse Unit",
                                                   "Trial Court Law Libraries"],
-                        "state_police": ["State Police", "Mass Turnpike Auth.st.police"],
+                        "state_police": ["State Police"],
                         "Parole_Board": ["Parole Board"],
                         "Supreme_Judicial_Court": ["Supreme Judicial Court"],
                         "Appeals_Court": ["Appeals CourT-John Adams Court"]}
@@ -63,6 +63,8 @@ def pensions_by_agency(requery):
     cthru_pension_payouts = get_cthru_pension_payouts(requery)
     pcnt_of_total = as_pcnt_of_total(cthru_pension_payouts, requery)
     contributions_by_year = pension_contributions_by_year(requery)
+    print("contributions by year")
+    display(contributions_by_year)
     return pension_payments_statewide(pcnt_of_total, contributions_by_year), contributions_by_year
 
 def as_pcnt_of_total(cthru_pension_payouts, requery):
@@ -73,8 +75,10 @@ def as_pcnt_of_total(cthru_pension_payouts, requery):
 
     payout_pct = pd.DataFrame(index=payouts_gb.index, columns=payouts_gb.columns)
     total_by_year = cthru_pension_payouts.groupby("year").sum()["annual_amount"]
+
     for y in list(range(2016,2020)):
         payout_pct.loc[:, y] = .5*(payouts_gb[y-1]/total_by_year[y-1]) + .5*(payouts_gb[y]/total_by_year[y])
+
     return payout_pct
 
 def pension_payments_statewide(payouts_fraction, contributions_by_year):
@@ -96,6 +100,7 @@ def pension_contributions_by_year(requery=False):
     pension_contributions = find_data(requery, client, "pegc-naaa", pension_SOQL, "cthru_pension_contributions.csv")
     pension_contributions["amount"] = pension_contributions["amount"].astype(float)
     pension_contributions["budget_fiscal_year"] = pension_contributions["budget_fiscal_year"].astype(int)
+    pension_contributions = pension_contributions[pension_contributions["object_class"] == "(DD) PENSION & INSURANCE RELATED EX"]
     return pension_contributions.groupby("budget_fiscal_year").sum()["amount"]
 
 def DOC_pensions(requery):
@@ -145,7 +150,8 @@ def find_umbrella(val, title):
     return np.NaN
 
 def find_agency(dept):
-    """Created in Version 2 to get agency class for each payment"""
+    """Created in Version 2 to get agency class for each payment
+    Should be made prettier in refactor """
     if dept == "Suffolk Sheriff's Office":
         return "Suffolk_Sheriff"
     if dept == "District Att.,suffolk District":
