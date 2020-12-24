@@ -19,7 +19,7 @@ def BostonPD_Fringe(PD_fraction):
     citywide_fringe.loc["Health Insurance Expenditures", 2018] = 210986298
     citywide_fringe.loc["Health Insurance Expendtiures", 2019] = 212029308
 
-    citywide_fringe.loc["Workers' Comp Fund Expenditures", 2018] = 1385669
+    citywide_fringe.loc["Workers' Comp Fund Expenditures", 2018] = 1385668
     citywide_fringe.loc["Workers' Comp Fund Expenditures", 2019] = 1618544
 
     # FY19 Document https://www.boston.gov/sites/default/files/embed/file/2019-04/v1_02-_19_a_summary-budget.pdf
@@ -27,23 +27,21 @@ def BostonPD_Fringe(PD_fraction):
     citywide_fringe.loc["Health Insurance Expenditures", 2017] = 205281017
 
     citywide_fringe.loc["Workers' Comp Fund Expenditures", 2016] = 1328171
-    citywide_fringe.loc["Workers' Comp Fund Expenditures", 2017] = 1478685
+    citywide_fringe.loc["Workers' Comp Fund Expenditures", 2017] = 1478695
 
     citywide_fringe.loc["Total"] = citywide_fringe.sum()
 
     PD_fringe = pd.DataFrame(columns=list(range(2016,2020)),
                              index = ["Worker's Comp Medical"])
-    PD_fringe.loc["Worker's Comp Medical", 2016] = 0 #From FY18 Document
+    PD_fringe.loc["Worker's Comp Medical", 2016] = 120503 #From FY19 Document
     PD_fringe.loc["Worker's Comp Medical", 2017] = 132926 # From FY19 Document
-    PD_fringe.loc["Worker's Comp Medical", 2018] = 0 # From FY20 Document
+    PD_fringe.loc["Worker's Comp Medical", 2018] = 123164 # From FY21 Document
     PD_fringe.loc["Worker's Comp Medical", 2019] = 101000 # From FY21 Document
 
     return citywide_fringe.loc["Total", 2016:2019] * PD_fraction + PD_fringe.loc["Worker's Comp Medical", :], PD_fringe.loc["Worker's Comp Medical", :]
 
 def ChelseaPD_Fringe(PD_fraction):
-    """No benefits listed separately on any budget document. Assign 0's to this category and say it's unclear
-    Thought about some sort of correction where we assume the ratio of salary to benefit is the same as revere and use
-    that to estimate but it's not worth it, just list it under missing data"""
+    """"""
     year_range = list(range(2016,2020))
 
     return pd.Series(index=year_range, data=0), pd.Series(index=year_range, data=0)
