@@ -41,24 +41,67 @@ def BostonPD_Fringe(PD_fraction):
     return citywide_fringe.loc["Total", 2016:2019] * PD_fraction + PD_fringe.loc["Worker's Comp Medical", :], PD_fringe.loc["Worker's Comp Medical", :]
 
 def ChelseaPD_Fringe(PD_fraction):
-    """"""
+    """For Chelsea Use Health Insurance, worker's Comp"""
     year_range = list(range(2016,2020))
+    citywide_fringe = pd.DataFrame(columns=year_range,
+                                   index=["Health Insurance",
+                                          "Workers Comp"])
+    #From FY20 Budget Page 8
+    citywide_fringe.loc["Health Insurance", 2016] = 6869046
+    citywide_fringe.loc["Workers Comp", 2016] = 300000
 
-    return pd.Series(index=year_range, data=0), pd.Series(index=year_range, data=0)
+    #From FY21 Budget
+
+    citywide_fringe.loc["Health Insurance", 2017] = 8020886.55
+    citywide_fringe.loc["Workers Comp", 2017] = 336888.50
+
+    citywide_fringe.loc["Health Insurance", 2018] = 7321981.22
+    citywide_fringe.loc["Workers Comp", 2018] = 464700.00
+
+    citywide_fringe.loc["Health Insurance", 2019] = 7315861
+    citywide_fringe.loc["Workers Comp", 2019] = 353120
+
+    citywide_fringe.loc["Total"] = citywide_fringe.sum()
+
+    return citywide_fringe.loc["Total"]*PD_fraction, pd.Series(index=year_range, data=0)
 
 def ReverePD_Fringe(PD_fraction):
     """There is line-item for worker's comp, health insurance under 900-unclassified section of budget
-    I will use total unclassified, which includes Workers Comp, Workers Comp Med, Workers Comp Unemp,
-    Group Health, Medicare Taxes, Sick Leave Buy Back, Insurance"""
+   There isn't consistent information across budgets, use some budget and some expenditures based on
+   what is available
+   """
     year_range = list(range(2016,2020))
-    benefits = pd.DataFrame(columns=year_range, index=["Total Unclassified Actual"])
+    citywide_fringe = pd.DataFrame(columns=year_range,
+                                   index=["Health Insurance",
+                                          "Workers Comp",
+                                          "Workers Comp Medical",
+                                          "Unemployment Insurance"])
 
-    benefits.loc["Total Unclassified Actual", 2016] = 19240462 # FY18 Document missing a 2016 number so use recap estimated from
-    benefits.loc["Total Unclassified Actual", 2017] = 19519748 # FY19 and FY18 Documents both missing 2017 number so used 2017 Mayor's Rec from FY17 Document
-    benefits.loc["Total Unclassified Actual", 2018] = 20649256 #Page
-    benefits.loc["Total Unclassified Actual", 2019] = 22635045.92 #On Page IX-7 From FY2021 Document
+    # Page 21 of FY17 Document. 2016 numbers are 2016 recap. 2017 numbers are Mayor's reco
+    citywide_fringe.loc["Workers Comp", 2016] = 472145
+    citywide_fringe.loc["Workers Comp Medical", 2016] = 120000
+    citywide_fringe.loc["Unemployment Insurance", 2016] = 80000
+    citywide_fringe.loc["Health Insurance", 2016] = 17200725
 
-    return benefits.loc["Total Unclassified Actual"] * PD_fraction
+    citywide_fringe.loc["Workers Comp", 2017] = 472145
+    citywide_fringe.loc["Workers Comp Medical", 2017] = 120000
+    citywide_fringe.loc["Unemployment Insurance", 2017] = 80000
+    citywide_fringe.loc["Health Insurance", 2017] = 17200725
+
+    #Page II - 208 of FY19 Document. FY18 numbers are adopted, FY 19 numbers are requested
+    citywide_fringe.loc["Workers Comp", 2018] = 302145
+    citywide_fringe.loc["Workers Comp Medical", 2018] = 120000
+    citywide_fringe.loc["Unemployment Insurance", 2018] = 80000
+    citywide_fringe.loc["Health Insurance", 2018] = 17680225
+
+    citywide_fringe.loc["Workers Comp", 2019] = 0
+    citywide_fringe.loc["Workers Comp Medical", 2019] = 120000
+    citywide_fringe.loc["Unemployment Insurance", 2019] = 80000
+    citywide_fringe.loc["Health Insurance", 2019] = 20085645
+
+    citywide_fringe.loc["Total"] = citywide_fringe.sum()
+
+    return citywide_fringe.loc["Total"] * PD_fraction, pd.Series(index=year_range, data=0)
 
 def No_Fringe_Benefits(PD_fraction):
     """Called by Chelsea, can add fringe benefits later"""

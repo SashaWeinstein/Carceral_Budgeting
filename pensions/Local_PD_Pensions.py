@@ -139,13 +139,14 @@ def WinthropPD_Pensions_Benefits(ReverePD_fraction):
     pensions.loc["Fringe Benefit Expenditures", 2017] = 30633 + 25657 + 3440277 + 34061
     pensions.loc["Pension Expenditures", 2017] = 2087906
 
-    # From FY 21 document get 2018, 2019 actual
+    # From FY 21 document get 2018, 2019 actual on page 121
     pensions.loc["Fringe Benefit Expenditures", 2018] = 27010 + 14308 + 1789570 + 1454919 + 20387
     pensions.loc["Pension Expenditures", 2018] = 2222798
 
-    pensions.loc["Fringe Benefit Expenditures", 2019] = 32219 + 57839 + 1882978 + 1324242 + 28424
+    pensions.loc["Fringe Benefit Expenditures", 2019] = 32219 + 57839 + 1882978 + 1327242 + 28424
     pensions.loc["Pension Expenditures", 2019] = 2232037
 
-
+    print("winthrop pensions/benefits are")
+    display(pensions)
     return pensions.loc["Fringe Benefit Expenditures"]*ReverePD_fraction, \
            pensions.loc["Pension Expenditures"]*ReverePD_fraction

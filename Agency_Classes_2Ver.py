@@ -538,9 +538,11 @@ class PoliceDepartment(Agency):
         Note that for 2016 for chelsea we don't have actual payroll so I will use rough estimation, need better
          way to fix later"""
         total_earnings, PD_fraction_non_teacher, PD_fraction_total, PD_payroll = True_Earnings(self.alias)
+
         if 2016 not in PD_fraction_non_teacher.index:
             PD_fraction_non_teacher[2016] = PD_fraction_non_teacher[2017] - \
                                             (PD_fraction_non_teacher[2018] - PD_fraction_non_teacher[2017])
+
         self.pensions = self.add_pension_costs(PD_fraction_non_teacher)
         self.fringe, fringe_PD_budget = self.add_fringe_benefits(PD_fraction_total)
         self.payroll = PD_payroll
@@ -548,14 +550,15 @@ class PoliceDepartment(Agency):
         self.payroll_expenditures_by_year = self.budget_summary.loc[
             "Payroll Expenditures", list(range(2016, 2020))]  # Need to fix year range
         if self.alias == "Chelsea PD":
-            self.payroll_by_year[2016] = self.budget_summary.loc["Payroll Budget", 2016]
-            self.payroll_expenditures_by_year[2016] = self.budget_summary.loc["Payroll Budget", 2016]
-        print("Boston's ")
-        self.non_payroll_operating_expenditures_by_year = self.budget_summary.loc["Total Expenditures"] - \
+            self.payroll_by_year[2016] = self.budget_summary.loc["Payroll Expenditures", 2016]
+            self.payroll_expenditures_by_year[2016] = self.budget_summary.loc["Payroll Expenditures", 2016]
+        #Break this into two in refactor
+        if self.alias == "Boston PD":
+            self.non_payroll_operating_expenditures_by_year = self.budget_summary.loc["Total Expenditures"] - \
                                                           self.budget_summary.loc["Payroll Expenditures"] - fringe_PD_budget
         if self.alias == "Chelsea PD":
-            self.non_payroll_operating_expenditures_by_year[2016] = self.budget_summary.loc["Total Budget", 2016] - \
-                                                                    self.budget_summary.loc["Payroll Budget", 2016]
+            self.non_payroll_operating_expenditures_by_year = self.budget_summary.loc["Non-Payroll Expenditures"]
+
         self.non_payroll_operating_expenditures_by_year = \
             self.non_payroll_operating_expenditures_by_year.loc[list(range(2016, 2020))]
         self.operating_costs = self.payroll_by_year + self.non_payroll_operating_expenditures_by_year
@@ -780,99 +783,33 @@ class ChelseaPD(PoliceDepartment):
         self.dept_title = "Police Department Program Budget"
         self.add_pension_costs = ChelseaPD_Pensions
         self.add_fringe_benefits = ChelseaPD_Fringe
-        self.budget_summary = pd.DataFrame(columns=self.year_range, index=["Payroll Proposed Budget",
-                                                                           "OT Proposed Budget",
-                                                                           "Total Proposed Budget",
-                                                                           "Payroll Budget",
-                                                                           "OT Budget",
-                                                                           "Total Budget",
-                                                                           "Payroll Expenditures",
-                                                                           "OT Expenditures",
+        self.budget_summary = pd.DataFrame(columns=self.year_range, index=["Payroll Expenditures",
+                                                                           "Non-Payroll Expenditures"
                                                                            "Total Expenditures"])
-        self.scrape()
+        self.get_budget_summary()
         self.Add_True_Earnings()
         self.get_final_costs()
 
-    def from_PDF(self):
-        """Written by Sasha on July 2nd to iterate through the two budgets we have"""
-        self.PDF_scraper_2020(data_dir_path + "ChelseaPD/Budget_FY20_Chelsea.pdf")
-        self.PDF_scraper_2021(data_dir_path + "ChelseaPD/Budget_FY21_Chelsea.pdf")
-        self.to_float()
 
-    def PDF_scraper_2020(self, path):
-        """Written by Sasha on June 29th to get data from pdfs here
-        https://www.chelseama.gov/city-auditor/pages/financial-documents-reports"""
-        budget_FY20_pdf = PdfFileReader(path)
-        for p in range(budget_FY20_pdf.getNumPages()):
-            if self.dept_title in budget_FY20_pdf.getPage(p).extractText():
-                bp = budget_FY20_pdf.getPage(p).extractText().replace("\n", " ")
-                PD_start = re.search("Police Department Program Budget ", bp)
-                bp = bp[PD_start.end():]
-                dollar_amounts_payroll = self.bp_to_list(bp, "Salaries, Wages and Benefits")
-                self.update_budget_summary_2020(2020, dollar_amounts_payroll, "Payroll")
-                dollar_amounts_operation = self.bp_to_list(bp, "Operations and Maintenance")
-                overall_dollar_amounts = [dollar_amounts_payroll[i] + dollar_amounts_operation[i]
-                                          for i in range(len(dollar_amounts_payroll))]
-                self.update_budget_summary_2020(2020, overall_dollar_amounts, "Overall")
-                capital_dollar_amounts = self.bp_to_list(bp, "Capital")
-                self.update_budget_summary_2020(2020, capital_dollar_amounts, "Capital")
-                break
+    def get_budget_summary(self):
+        """Created Thursday Dec 24th"""
+        #From FY20 Document
+        self.budget_summary.loc["Payroll Expenditures", 2016 ] = 9685922
+        self.budget_summary.loc["Non-Payroll Expenditures", 2016 ] = 1050166
+        self.capital_expenditures_by_year.loc[2016] =173000
 
-    def PDF_scraper_2021(self, path):
-        budget_obj = PdfFileReader(path)
-        PD_section = False
-        for p in range(budget_obj.getNumPages()):
-            if "Police Salaries" in budget_obj.getPage(p).extractText():
-                bp = budget_obj.getPage(p).extractText().replace("\n", " ")
-                PD_section = True
-                payroll_dollar_amounts = self.bp_to_list(bp, "Group Total:")
-                self.update_budget_summary_2021(2021, payroll_dollar_amounts, "Payroll")
-                bp = budget_obj.getPage(p + 1).extractText().replace("\n", " ")
-                operation_dollar_amounts = self.bp_to_list(bp, "Group Total:")
-                self.update_budget_summary_2021(2021, (payroll_dollar_amounts, operation_dollar_amounts), "Non-Capital")
-                capital_start = re.search("Capital", bp)
-                bp = bp[capital_start.start():]
-                capital_dollar_amounts = self.bp_to_list(bp, "Group Total:")
-                self.update_budget_summary_2021(2021, capital_dollar_amounts, "Capital")
-                break
+        #From FY21 Documeent
+        self.budget_summary.loc["Payroll Expenditures" , 2017 ] = 9551598
+        self.budget_summary.loc["Non-Payroll Expenditures" , 2017 ] = 701295.76
+        self.capital_expenditures_by_year.loc[2017] = 164000
 
-    def update_budget_summary_2021(self, year, dollar_amounts, line_item):
-        """On July 7th the name of this function was changed"""
-        if line_item == "Non-Capital":
-            payroll_dollars, operations_dollars = dollar_amounts
-            assert dollar_amounts != [], "No total line item found for " + str(year)
-            self.budget_summary.loc["Total Expenditures", year - 2] = payroll_dollars[2] + operations_dollars[2]
-            self.budget_summary.loc["Total Expenditures", year - 3] = payroll_dollars[1] + operations_dollars[1]
-            self.budget_summary.loc["Total Expenditures", year - 4] = payroll_dollars[0] + operations_dollars[0]
-            self.budget_summary.loc["Total Budget", year - 1] = payroll_dollars[3] + operations_dollars[3]
-            self.budget_summary.loc["Total Proposed Budget", year] = payroll_dollars[4] + operations_dollars[4]
-        elif line_item == "Payroll":
-            assert dollar_amounts is not None, "Dollar amounts for " + str(year) + " Chelsea PD total pay not found"
-            self.budget_summary.loc["Payroll Expenditures", year - 2] = dollar_amounts[2]
-            self.budget_summary.loc["Payroll Expenditures", year - 3] = dollar_amounts[1]
-            self.budget_summary.loc["Payroll Expenditures", year - 4] = dollar_amounts[0]
-            self.budget_summary.loc["Payroll Budget", year - 1] = dollar_amounts[3]
-            self.budget_summary.loc["Payroll Proposed Budget", year] = dollar_amounts[4]
-        elif line_item == "Capital":
-            assert dollar_amounts is not None, "Dollar amounts for " + str(
-                year) + " Chelsea PD capital expenditures not found"
-            self.capital_expenditures_by_year[year - 2] = dollar_amounts[2]
-            self.capital_expenditures_by_year[year - 3] = dollar_amounts[1]
-            self.capital_expenditures_by_year[year - 4] = dollar_amounts[0]
+        self.budget_summary.loc["Payroll Expenditures" , 2018 ] = 9923457.54
+        self.budget_summary.loc["Non-Payroll Expenditures" , 2018 ] = 710475.69
+        self.capital_expenditures_by_year.loc[2018] = 161438.91
 
-    def update_budget_summary_2020(self, year, dollar_amounts, line_item):
-        """Written on July 7th during update"""
-        if line_item == "Overall":
-            for i in range(5):
-                self.budget_summary.loc["Total Budget", year - i] = dollar_amounts[4 - i]
-
-        if line_item == "Payroll":
-            for i in range(5):
-                self.budget_summary.loc["Payroll Budget", year - i] = dollar_amounts[4 - i]
-
-        if line_item == "Capital":
-            # Note that for 2016, we use budget instead of expenditures
-            self.capital_expenditures_by_year[year - 4] = dollar_amounts[0]
+        self.budget_summary.loc["Payroll Expenditures" , 2019 ] = 11526261.80
+        self.budget_summary.loc["Non-Payroll Expenditures" , 2019 ] = 639385.29
+        self.capital_expenditures_by_year.loc[2019] = 0
 
 
 class ReverePD(PoliceDepartment):
@@ -904,7 +841,7 @@ class ReverePD(PoliceDepartment):
         self.scrape()
         self.pensions, self.PD_fraction = ReverePD_Pensions(
             self.budget_summary.loc["Payroll Adopted", list(range(2016, 2020))])
-        self.fringe = ReverePD_Fringe(self.PD_fraction)
+        self.fringe, _ = ReverePD_Fringe(self.PD_fraction)
         self.get_final_costs()
 
     def get_final_costs(self, apply_correction=True, add_hidden_costs=True, pensions_statewide=None):

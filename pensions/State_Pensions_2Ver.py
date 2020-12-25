@@ -63,8 +63,6 @@ def pensions_by_agency(requery):
     cthru_pension_payouts = get_cthru_pension_payouts(requery)
     pcnt_of_total = as_pcnt_of_total(cthru_pension_payouts, requery)
     contributions_by_year = pension_contributions_by_year(requery)
-    print("contributions by year")
-    display(contributions_by_year)
     return pension_payments_statewide(pcnt_of_total, contributions_by_year), contributions_by_year
 
 def as_pcnt_of_total(cthru_pension_payouts, requery):
