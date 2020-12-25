@@ -126,7 +126,6 @@ def WinthropPD_Pensions_Benefits(ReverePD_fraction):
     Group Insurance - Town, Police Fire Medical
     """
 
-    print()
     year_range = list(range(2016,2020))
     pensions = pd.DataFrame(columns = year_range,
                             index = ["Fringe Benefit Expenditures",
@@ -146,7 +145,5 @@ def WinthropPD_Pensions_Benefits(ReverePD_fraction):
     pensions.loc["Fringe Benefit Expenditures", 2019] = 32219 + 57839 + 1882978 + 1327242 + 28424
     pensions.loc["Pension Expenditures", 2019] = 2232037
 
-    print("winthrop pensions/benefits are")
-    display(pensions)
     return pensions.loc["Fringe Benefit Expenditures"]*ReverePD_fraction, \
            pensions.loc["Pension Expenditures"]*ReverePD_fraction

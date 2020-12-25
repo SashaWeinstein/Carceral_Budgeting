@@ -961,6 +961,8 @@ class WinthropPD(PoliceDepartment):
         self.scrape()
         self.payroll_final = self.budget_summary.loc["Payroll Expenditures", list(range(2016, 2020))]
         self.payroll_final[2018] = self.budget_summary.loc["Payroll Budget", 2018]
+        #Capital expenditures should get it's own function. 2017-2019 numbers are from page 73 of FY21 budget
+        # 2016 number is from page 134 in FY17 budget
         self.capital_expenditures_by_year = pd.Series(index=list(range(2016, 2020)), data=[0, 39393, 40000, 0])
         self.fringe, self.pensions = WinthropPD_Pensions_Benefits(ReverePD_fraction)
         self.get_final_costs()
