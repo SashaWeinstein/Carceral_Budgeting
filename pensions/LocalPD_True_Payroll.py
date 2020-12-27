@@ -1,5 +1,13 @@
 """Created July 30th to take code from jupyter notebooks in pensions folder and put into callable modules
-This link https://bmrb.org/wp-content/uploads/2016/05/SR03-3.pdf says all quinn money comes from state"""
+This link https://bmrb.org/wp-content/uploads/2016/05/SR03-3.pdf says all quinn money comes from state
+Note on methodology to remove employees covered by MTRS: some MTRS employees are still in the "no teachers" group as
+the combination of department/title isn't clear enough. One must have a title that clearly indicates that they have a
+role covered by MTRS and a department that is clearly. If the school an employee works at is called "BTU Pilot" or "East Boston EEC"
+then that employee isn't counted as an MTRS as it's not 100% clear. This means the fraction of BPD of non-MTRS payroll is
+a slight undercount. (Which is intentional, we have to miss in some direction cause we can't know each employee's
+pension coverage plan so better to be to strict on who we count as MTRS).
+
+"""
 
 import pandas as pd
 
@@ -84,13 +92,11 @@ def True_Earnings(agency_alias):
                                     "Boston Police Department", "TOTAL EARNINGS", "TITLE")
     elif agency_alias == "Chelsea PD":
         """Code to fill missing data added to this function on Aug 24"""
-        total_earnings, PD_fraction_non_teacher, PD_fraction_total, PD_payroll = PD_Fraction_of_Total(
-            Chelsea_Total_Earnings(),
-            "fiscalyear", "Chelsea",
-            "POLICE DEPARTMENT",
-            "totalpay", "position")
 
-        return total_earnings, PD_fraction_non_teacher, PD_fraction_total, PD_payroll
+        return PD_Fraction_of_Total( Chelsea_Total_Earnings(),
+                                        "fiscalyear", "Chelsea",
+                                        "POLICE DEPARTMENT",
+                                        "totalpay", "position")
 
 
 def PD_Fraction_of_Total(total_earnings, year_col, city, dept_name, earnings_col, title_col):
