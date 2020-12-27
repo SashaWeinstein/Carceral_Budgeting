@@ -2,6 +2,19 @@
 import pandas as pd
 import numpy as np
 
+def all_agency_corrections():
+    """Written Dec 27. Returns all corrections used in final version: Trial court, appeals court, DOC, population"""
+    yr = list(range(2016, 2020))
+    out_df = pd.DataFrame(columns=yr)
+    out_df.loc["Trial Court Correction"] = trial_court_correction(1)
+    out_df.loc["Appeals Court Correction"] = appeals_court_correction(1)
+    out_df.loc["DOC Correction"] = DOC_correction(1)
+    out_df.loc["Population Correction"] = population_correction(1)
+
+    return out_df
+
+
+
 def trial_court_correction(df):
     """Trial Court statistics from
      https://www.mass.gov/info-details/trial-court-statistical-reports-and-dashboards#statistics-2014-2020-"""

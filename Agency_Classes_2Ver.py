@@ -563,6 +563,9 @@ class PoliceDepartment(Agency):
             self.non_payroll_operating_expenditures_by_year.loc[list(range(2016, 2020))]
         self.operating_costs = self.payroll_by_year + self.non_payroll_operating_expenditures_by_year
 
+        #Somehow boston's year range goes through 2021. so much to fix during refactor
+        self.capital_expenditures_by_year = self.capital_expenditures_by_year.loc[list(range(2016,2020))]
+
     def scrape(self):
         file_path = saved_scraped_path + self.alias + ".csv"
 
