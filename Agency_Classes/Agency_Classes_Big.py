@@ -19,12 +19,12 @@ sys.path.insert(0, "%spdf_scraper" % cost_type_dir)
 sys.path.insert(0, "%sCapital_Costs" % cost_type_dir)
 sys.path.insert(0, "%sPayroll" % cost_type_dir)
 sys.path.insert(0, "%sNon-Payroll_Operating" % cost_type_dir)
-from Statewide_Pensions import pensions_by_agency, pensions_from_payouts_fraction
+from Pensions_Final import pensions_from_payouts_fraction
 from LocalPD_True_Payroll import True_Earnings
-from MBTA_Payroll_Scraper import scrape_payroll
 from LocalPD_Pensions import BostonPD_Pensions, ChelseaPD_Pensions, ReverePD_Pensions, WinthropPD_Pensions_Benefits
 from LocalPD_Fringe import BostonPD_Fringe, ChelseaPD_Fringe, ReverePD_Fringe
-from Statewide_Fringe import Total_Statewide_Payroll, Total_Statewide_Fringe
+from Statewide_Fringe import Total_Statewide_Fringe
+from Statewide_Payroll import Total_Statewide_Payroll, Fraction_Statewide_Payroll
 from LocalPD_External_Funds import BostonPD_External_Funds_Correction
 from DCP_Capital import get_capital_expenditures
 from ReverePD_Capital_Costs import get_ReverePD_Capital_Costs
@@ -42,9 +42,8 @@ app_token = "2Qa1WiG8G4kj1vGVd2noK7zP0"
 client = Socrata("cthru.data.socrata.com", app_token)
 client.timeout = 40
 
-# To-Do: maybe move this code to initialize agencies? Makes more logical sense there
-pensions_statewide, contributions_by_year = pensions_by_agency(False)
-total_statewide_payroll = Total_Statewide_Payroll(client)
+# To-Do
+# total_statewide_payroll = Total_Statewide_Payroll(client)
 total_statewide_fringe = Total_Statewide_Fringe(client)
 DCP_capital_expenditures = get_capital_expenditures(client)
 
@@ -91,11 +90,10 @@ class StateAgency(Agency):
         self.get_expenditures_by_year()
         self.add_payroll_by_year()
         # Code to get payroll fraction should be moved somewhere else
-        self.payroll_fraction = self.payroll_by_year / total_statewide_payroll[self.year_range]
+        self.payroll_fraction = Fraction_Statewide_Payroll(self)
         self.pensions, self.local_pensions = pension_function(self)
         self.final_costs_calculated = False
         self.get_final_costs()
-        print("successfully initialized", self.alias)
 
     def get_final_costs(self, apply_correction=True):
         """Created August 12 for new methodology where we use expenditures for everything"""
@@ -208,9 +206,9 @@ class StateAgency(Agency):
         self.payroll[self.pay_col] = self.payroll[self.pay_col].astype(float)
         self.payroll.loc[:, "year"] = self.payroll.loc[:, "year"].astype(int)
 
-    def add_payroll_by_year(self, total_OT_only=False):
+    def add_payroll_by_year(self):
         """Written by Sasha on June 24th to take code from exploratory main"""
-        self.add_payroll(total_OT_only)
+        self.add_payroll(False)
         payroll_by_calendar_year = self.payroll.groupby("year")[self.pay_col].sum().T
         for y in self.year_range:
             self.payroll_by_year[y] = .5 * payroll_by_calendar_year.loc["pay_total_actual", y - 1] + \
@@ -257,10 +255,10 @@ class StateAgency(Agency):
         """New August 14th, at this point only gets health insurance from GIC"""
         if self.payroll_by_year.empty:  # This is the sort of code that should come out, I should just call payroll by year beforehand
             self.add_payroll_by_year()
-        pcnt_by_year = self.payroll_by_year / total_statewide_payroll
+
         self.non_hidden_fringe_by_year = self.non_hidden_fringe.groupby("budget_fiscal_year").sum()["amount"].T
         self.non_hidden_fringe_by_year = self.non_hidden_fringe_by_year.reindex(self.year_range, fill_value=0)
-        hidden_fringe = pcnt_by_year * total_statewide_fringe
+        hidden_fringe = self.payroll_fraction * total_statewide_fringe
         self.fringe = hidden_fringe.loc[self.year_range] + self.non_hidden_fringe_by_year
 
     def construct_expenditures_SOQL(self):
@@ -341,64 +339,7 @@ class CPCS(StateAgency):
                                       .5 * payroll_by_calendar_year.loc["pay_total_actual", y]
 
 
-class MBTA(StateAgency):
-    """Giving MBTA Police it's own class because code I use to generate it's numbers is different enough"""
 
-    def __init__(self, alias, official_name, year_range, category, client, correction_function=None):
-        #Jank but if works for know then points in correct direction for later
-        StateAgency.__init__(self, alias, official_name, year_range, category,
-                             payroll_vendors=[],
-                             payroll_official_name='Massachusetts Bay Transportation Authority (MBT)',
-                             client=client, correction_function=correction_function)
-        self.payroll_by_year = pd.Series(index=self.year_range, data=0)
-        self.payroll_expenditures_by_year = pd.Series(index=self.year_range, data=0)
-        self.get_final_costs()
-
-    def get_expenditures_by_year(self):
-        """Janky, need to make nice for refactor"""
-        print("hooray got here")
-        self.non_payroll_operating_expenditures_by_year = pd.Series(index=self.year_range, data=0)
-
-    def get_final_costs(self, apply_correction=True, add_hidden_costs=False, pensions_statewide=None):
-        """Janky to pass pensions_statewide df but never use it, but I'm up against deadline today """
-        if self.payroll_by_year.sum() == 0:
-            self.add_payroll_by_year()
-
-        fraction = self.payroll_by_year / total_statewide_payroll[self.year_range]
-        pension = contributions_by_year[self.year_range] * fraction
-        self.pensions = pension
-
-        self.payroll_expenditures_by_year = self.operating_costs
-        self.non_payroll_operating_expenditures_by_year = pd.Series(index=list(range(2016, 2020)), data=0)
-        final = self.payroll_by_year + self.non_payroll_operating_expenditures_by_year \
-                + self.pensions + self.fringe + self.capital_expenditures_by_year
-        return self.correction_function(final)
-
-    def add_payroll_by_year(self):
-        """This is combination of cthru and budget pdf I found online at
-        https://www.mbta.com/financials/mbta-budget"""
-        self.add_payroll(True)
-        self.payroll["police_pay"] = self.payroll.apply(lambda x: self.get_police_pay(x),
-                                                        axis=1)
-        self.payroll_by_calendar_year = self.payroll.groupby("year").agg(
-            {"pay_total_actual": "sum", "police_pay": "sum"}).T
-        scraped = scrape_payroll('data/MBTA_pdfs/Scraper_Results_Dec20.json', False)
-        for y in [2015, 2017]:
-            self.payroll_by_calendar_year.loc["pay_total_actual", y] = scraped[y]["total_pay_actual"]
-            self.payroll_by_calendar_year.loc["police_pay", y] = scraped[y]["police_pay"]
-        self.payroll_by_year[2016] = self.payroll_by_calendar_year.loc["police_pay", 2015]  # Missing data for 2016
-        self.payroll_by_year[2017] = self.payroll_by_calendar_year.loc["police_pay", 2017]
-
-        for y in self.year_range[2:]:
-            self.payroll_by_year.loc[y] = .5 * self.payroll_by_calendar_year.loc["police_pay", y - 1] + \
-                                          .5 * self.payroll_by_calendar_year.loc["police_pay", y]
-
-    def get_police_pay(self, row):
-        position = row["position_title"].lower()
-        if "police" in position or "sergeant" in position:
-            return row["pay_total_actual"]
-        else:
-            return 0
 
 
 class PoliceDepartment(Agency):

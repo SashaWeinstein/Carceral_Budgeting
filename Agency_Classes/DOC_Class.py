@@ -1,5 +1,5 @@
 from Agency_Classes_Big import StateAgency
-from Statewide_Pensions import pensions_from_payroll_fraction
+from Pensions_Final import pensions_from_payroll_fraction
 
 
 class DOC(StateAgency):

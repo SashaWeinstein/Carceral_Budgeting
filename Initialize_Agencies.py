@@ -1,11 +1,10 @@
-"""Created by Sasha on August 3rd. New in version 2 is that it returns a dictionary that maps the alias to the object
-This version is better if you want all agencies, if you want to skip version 1 may be better
-I should write a 3rd version where you can put in agencies wanted"""
+"""Created by Sasha on August 3rd. This code returns all 17 agencies in dictionary """
 import sys
 sys.path.insert(0, "/Users/alexanderweinstein/Documents/Harris/Summer2020/Carceral_Budgeting/Exploratory/Agency_Classes/")
 
-from Agency_Classes_Big import StateAgency, CPCS, MBTA, BostonPD, ChelseaPD, ReverePD, WinthropPD
+from Agency_Classes_Big import StateAgency, CPCS, BostonPD, ChelseaPD, ReverePD, WinthropPD
 from DOC_Class import DOC
+from MBTA_Class import MBTA
 from sodapy import Socrata
 from Agency_Corrections import trial_court_correction, DOC_correction, \
     appeals_court_correction, population_correction
