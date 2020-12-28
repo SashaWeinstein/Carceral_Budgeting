@@ -18,6 +18,7 @@ sys.path.insert(0, "%sFringe" % cost_type_dir)
 sys.path.insert(0, "%spdf_scraper" % cost_type_dir)
 sys.path.insert(0, "%sCapital_Costs" % cost_type_dir)
 sys.path.insert(0, "%sPayroll" % cost_type_dir)
+sys.path.insert(0, "%sNon-Payroll_Operating" % cost_type_dir)
 from Statewide_Pensions import pensions_by_agency
 from LocalPD_True_Payroll import True_Earnings
 from MBTA_Payroll_Scraper import scrape_payroll
@@ -30,6 +31,8 @@ from ReverePD_Capital_Costs import get_ReverePD_Capital_Costs
 from Agency_Corrections import trial_court_pcnt_criminal
 
 from Agency_Parent import Agency
+
+exploratory_dir = "/Users/alexanderweinstein/Documents/Harris/Summer2020/Carceral_Budgeting/Exploratory/"
 
 data_dir_path = "%sdata/" % exploratory_dir
 saved_scraped_path = "/Users/alexanderweinstein/Documents/Harris/Summer2020/Carceral_Budgeting/Exploratory" \
