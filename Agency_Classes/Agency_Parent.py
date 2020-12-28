@@ -41,29 +41,9 @@ class Agency():
             self.correction_function = correction_function
         else:
             self.correction_function = lambda x: x
-        self.local_pensions = pd.Series(index=self.year_range, data=0)  # New Dec 22
-        #To do during big refactor: this should go in it's own method for symmetry's sake
-        if self.alias in pensions_statewide.index or self.alias == "trial_court":
-            #To do during refator: this should go in separate trial court class
-            if self.alias == "trial_court":
-                self.pensions = pensions_statewide.loc["trial_court_statewide", self.year_range]
-                self.local_pensions = pensions_statewide.loc["trial_court_local", self.year_range]
-            elif self.alias =="Suffolk_Sheriff":
-                # To-do: move this to sheriff object
-                """Added august 12th to account for City of Boston's obligations to retirees of suffolk sheriff's office. From
-                    Boston state budget:
-                         State legislation converted all existing and future Suffolk County Sheriff employees to state employees
-                         effective January 1, 2010. The State charges the City for Suffolk County through an assessment based on the
-                        residual unfunded pension liability for former Sherriff employees who retired prior to January 1, 2010.
-                        Once the unfunded pension liability is fully extinguished, the budget for Suffolk County
-                        will no longer be necessary.
-                """
-                self.pensions = pensions_statewide.loc[self.alias, self.year_range] + 3.87*(10**6)
+        self.pensions = pd.Series(index=year_range, data=0)
+        self.local_pensions = pd.Series(index=year_range, data=0)
 
-            else:
-                self.pensions = pensions_statewide.loc[self.alias, self.year_range]
-        else:
-            self.pensions = pd.Series(index=self.year_range, data=0)
         self.fringe = pd.Series(index=self.year_range, data=0)
         self.federal_expenditures_by_year = pd.Series(index=list(range(2016, 2020)),
                                                       data=0)  # needs fix: have to use range here cause some police year ranges aren't 2016-2020. Have to fix that then can use self.year_range

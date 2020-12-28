@@ -19,7 +19,7 @@ sys.path.insert(0, "%spdf_scraper" % cost_type_dir)
 sys.path.insert(0, "%sCapital_Costs" % cost_type_dir)
 sys.path.insert(0, "%sPayroll" % cost_type_dir)
 sys.path.insert(0, "%sNon-Payroll_Operating" % cost_type_dir)
-from Statewide_Pensions import pensions_by_agency
+from Statewide_Pensions import pensions_by_agency, pensions_from_payouts_fraction
 from LocalPD_True_Payroll import True_Earnings
 from MBTA_Payroll_Scraper import scrape_payroll
 from LocalPD_Pensions import BostonPD_Pensions, ChelseaPD_Pensions, ReverePD_Pensions, WinthropPD_Pensions_Benefits
@@ -62,7 +62,8 @@ class StateAgency(Agency):
     Actually, objects are getting intialized when I import initialize agencies, which isn't what I want."""
 
     def __init__(self, alias, official_name, year_range, category, correction_function=None, settlement_agencies=None,
-                 payroll_vendors=[], payroll_official_name=None, client=None):
+                 payroll_vendors=[], payroll_official_name=None, client=None,
+                 pension_function=pensions_from_payouts_fraction):
         Agency.__init__(self, alias, official_name, year_range, category, correction_function)
         self.client = client
         self.payroll_official_name = payroll_official_name  # MBTA is lowercase in payroll system for some reason
@@ -87,17 +88,23 @@ class StateAgency(Agency):
         self.expenditures_by_year = pd.DataFrame(columns=self.year_range)
         self.budget_by_year = pd.DataFrame(columns=self.year_range)
         self.operating_costs = None  # This is where cost type "operating costs" will be stored
-
+        self.get_expenditures_by_year()
+        self.add_payroll_by_year()
+        # Code to get payroll fraction should be moved somewhere else
+        self.payroll_fraction = self.payroll_by_year / total_statewide_payroll[self.year_range]
+        self.pensions, self.local_pensions = pension_function(self)
         self.final_costs_calculated = False
         self.get_final_costs()
+        print("successfully initialized", self.alias)
 
     def get_final_costs(self, apply_correction=True):
         """Created August 12 for new methodology where we use expenditures for everything"""
         if not self.final_costs_calculated:
             self.final_costs_calculated = True
-            self.get_expenditures_by_year()
-            self.add_settlements()
-            self.add_payroll_by_year()
+
+            #To-do: once trial court gets it's own function we can take away local pensions from parent get final costs
+
+
             self.add_fringe()
 
             self.operating_costs = self.expenditures_by_year.loc["Total Expenditures"]
@@ -106,12 +113,7 @@ class StateAgency(Agency):
             if self.alias in DCP_capital_expenditures.index:
                 self.capital_expenditures_by_year += DCP_capital_expenditures.loc[self.alias, self.year_range]
 
-            #To do: move this code it it's own method
-            if self.alias == "DOC":
-                fraction = self.payroll_by_year/total_statewide_payroll[self.year_range]
-                pension = contributions_by_year[self.year_range] * fraction
-                self.pensions = pension
-            #For refactor move this code it it's own method
+            #During refactor move this somewhere
             if self.alias =="trial_court":
                 pcnt_criminal_correction = trial_court_pcnt_criminal()
 
@@ -299,9 +301,8 @@ class CPCS(StateAgency):
         """Created August 12 for new methodology where we use expenditures for everything"""
         if not self.final_costs_calculated:
             self.final_costs_calculated = True
-            self.add_expenditures(client)
-
-            self.get_expenditures_by_year()
+            # self.add_expenditures(client)
+            # self.get_expenditures_by_year()
             self.RR_correction()
             self.add_settlements()
             self.add_payroll_by_year()
@@ -344,6 +345,7 @@ class MBTA(StateAgency):
     """Giving MBTA Police it's own class because code I use to generate it's numbers is different enough"""
 
     def __init__(self, alias, official_name, year_range, category, client, correction_function=None):
+        #Jank but if works for know then points in correct direction for later
         StateAgency.__init__(self, alias, official_name, year_range, category,
                              payroll_vendors=[],
                              payroll_official_name='Massachusetts Bay Transportation Authority (MBT)',
@@ -351,6 +353,11 @@ class MBTA(StateAgency):
         self.payroll_by_year = pd.Series(index=self.year_range, data=0)
         self.payroll_expenditures_by_year = pd.Series(index=self.year_range, data=0)
         self.get_final_costs()
+
+    def get_expenditures_by_year(self):
+        """Janky, need to make nice for refactor"""
+        print("hooray got here")
+        self.non_payroll_operating_expenditures_by_year = pd.Series(index=self.year_range, data=0)
 
     def get_final_costs(self, apply_correction=True, add_hidden_costs=False, pensions_statewide=None):
         """Janky to pass pensions_statewide df but never use it, but I'm up against deadline today """
