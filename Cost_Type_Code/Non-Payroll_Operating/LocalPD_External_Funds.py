@@ -119,7 +119,7 @@ federal_priv_grants_2021.loc["VAWA STOP Project"] = 140388
 
 
 
-def BostonPD_External_Funds_Correction():
+def BostonPD_External_Funds():
     """Each year uses actual expenditures"""
     df = pd.DataFrame(columns=list(range(2016,2020)),
                       index=["Total Federal/Private Grant Expenditures"] )
@@ -128,4 +128,4 @@ def BostonPD_External_Funds_Correction():
     df.loc["Total Federal/Private Grant Expenditures", 2018] = federal_priv_grants_2020.sum()
     df.loc["Total Federal/Private Grant Expenditures", 2019] = federal_priv_grants_2021.sum()
 
-    return df
+    return df.loc["Total Federal/Private Grant Expenditures"]

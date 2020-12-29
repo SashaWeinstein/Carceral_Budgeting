@@ -3,7 +3,6 @@
 import pandas as pd
 from Statewide_Pensions import pensions_by_agency
 
-print("got here")
 by_agency, contributions_by_year = pensions_by_agency(requery=False)
 
 

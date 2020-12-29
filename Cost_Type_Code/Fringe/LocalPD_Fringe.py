@@ -4,13 +4,14 @@ These numbers are from administration and finance budget"""
 import pandas as pd
 
 
-def BostonPD_Fringe(PD_fraction):
+def BostonPD_Fringe(agency):
     """PD_fraction is series that maps year to % of total payroll that Boston PD makes up
     Updated Dec 18 to include benefits money in current chgs & obligations section of police budget
     Citywide numbers are from General Fund Appropriations by Cabinet & Department page in citywide budget
     which can be found under 'Operating Budget' at https://www.boston.gov/departments/budget
     Current thinking is that because worker's comp fund in citywide is under "admininistration and finance"
     that it's pointing to a separate expendituree than the 'Worker's Comp medical' in the Boston PD """
+    PD_fraction = agency.PD_fraction_total
     citywide_fringe = pd.DataFrame(columns=list(range(2016, 2021)),
                           index=["Health Insurance Expenditures",
                                  "Workers' Comp Fund Expenditures"])
@@ -31,14 +32,15 @@ def BostonPD_Fringe(PD_fraction):
 
     citywide_fringe.loc["Total"] = citywide_fringe.sum()
 
-    PD_fringe = pd.DataFrame(columns=list(range(2016,2020)),
-                             index = ["Worker's Comp Medical"])
-    PD_fringe.loc["Worker's Comp Medical", 2016] = 120503 #From FY19 Document
-    PD_fringe.loc["Worker's Comp Medical", 2017] = 132926 # From FY19 Document
-    PD_fringe.loc["Worker's Comp Medical", 2018] = 123164 # From FY21 Document
-    PD_fringe.loc["Worker's Comp Medical", 2019] = 101000 # From FY21 Document
+    # We now get commented out code in bostonPD non payroll operating
+    # PD_fringe = pd.DataFrame(columns=list(range(2016,2020)),
+    #                          index = ["Worker's Comp Medical"])
+    # PD_fringe.loc["Worker's Comp Medical", 2016] = 120503 #From FY19 Document
+    # PD_fringe.loc["Worker's Comp Medical", 2017] = 132926 # From FY19 Document
+    # PD_fringe.loc["Worker's Comp Medical", 2018] = 123164 # From FY21 Document
+    # PD_fringe.loc["Worker's Comp Medical", 2019] = 101000 # From FY21 Document
 
-    return citywide_fringe.loc["Total", 2016:2019] * PD_fraction + PD_fringe.loc["Worker's Comp Medical", :], PD_fringe.loc["Worker's Comp Medical", :]
+    return citywide_fringe.loc["Total", 2016:2019] * PD_fraction #+ PD_fringe.loc["Worker's Comp Medical", :]#, PD_fringe.loc["Worker's Comp Medical", :]
 
 def ChelseaPD_Fringe(PD_fraction):
     """For Chelsea Use Health Insurance, worker's Comp"""
