@@ -2,9 +2,10 @@
 import sys
 sys.path.insert(0, "/Users/alexanderweinstein/Documents/Harris/Summer2020/Carceral_Budgeting/Exploratory/Agency_Classes/")
 
-from Agency_Classes_Big import StateAgency, CPCS, BostonPD, ChelseaPD, ReverePD, WinthropPD
-from DOC_Class import DOC
-from MBTA_Class import MBTA
+from Agency_Classes_Big import StateAgency, CPCS, ChelseaPD, ReverePD, WinthropPD
+from DOC import DOC
+from MBTA import MBTA
+from BostonPD import BostonPD
 from sodapy import Socrata
 from Agency_Corrections import trial_court_correction, DOC_correction, \
     appeals_court_correction, population_correction
@@ -86,7 +87,7 @@ def get_agencies(yr):
                                             year_range=yr, client=client, category="Legal",
                                             correction_function=appeals_court_correction)
 
-    out_dict["Boston PD"] = BostonPD()
+    out_dict["Boston PD"] = BostonPD(yr)
     out_dict["Chelsea PD"] = ChelseaPD()
     out_dict["Revere PD"] = ReverePD()
 

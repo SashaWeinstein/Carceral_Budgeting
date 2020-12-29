@@ -21,16 +21,15 @@ sys.path.insert(0, "%sPayroll" % cost_type_dir)
 sys.path.insert(0, "%sNon-Payroll_Operating" % cost_type_dir)
 from Pensions_Final import pensions_from_payouts_fraction
 from LocalPD_True_Payroll import True_Earnings
-from LocalPD_Pensions import BostonPD_Pensions, ChelseaPD_Pensions, ReverePD_Pensions, WinthropPD_Pensions_Benefits
-from LocalPD_Fringe import BostonPD_Fringe, ChelseaPD_Fringe, ReverePD_Fringe
+from LocalPD_Pensions import ChelseaPD_Pensions, ReverePD_Pensions, WinthropPD_Pensions_Benefits
+from LocalPD_Fringe import ChelseaPD_Fringe, ReverePD_Fringe
 from Statewide_Fringe import Total_Statewide_Fringe
 from Statewide_Payroll import Total_Statewide_Payroll, Fraction_Statewide_Payroll
-from LocalPD_External_Funds import BostonPD_External_Funds
+
 from DCP_Capital import get_capital_expenditures
 from ReverePD_Capital_Costs import get_ReverePD_Capital_Costs
 from Agency_Corrections import trial_court_pcnt_criminal
-from BostonPD_Non_Payroll_Operating import get_BostonPD_Non_Payroll_Operating
-from BostonPD_Capital import get_BostonPD_Capital_Costs
+
 
 from Agency_Parent import Agency
 
@@ -421,6 +420,23 @@ class PoliceDepartment(Agency):
 
         return self.bp_to_list(bp, "vertime"), self.bp_to_list(bp, total_payroll_line_item)
 
+    def scrape(self):
+        file_path = saved_scraped_path + self.alias + ".csv"
+
+        if os.path.exists(file_path):
+            self.budget_summary = pd.read_csv(file_path, index_col=0)
+            self.budget_summary.columns = [int(x) for x in self.budget_summary.columns]
+            if self.alias in ["Boston PD", "Chelsea PD"]:
+                self.capital_expenditures_by_year = pd.read_json(
+                    saved_scraped_path + self.alias + "_capital_expenditures.json",
+                    typ='series', orient='records')
+        else:
+            self.from_PDF()
+            self.budget_summary.to_csv(file_path)
+            if self.alias in ["Boston PD", "Chelsea PD"]:
+                self.capital_expenditures_by_year.to_json(
+                    saved_scraped_path + self.alias + "_capital_expenditures.json")
+
     def Add_True_Earnings(self):
         """New July 30th. Replace expenditure numbers 2016-2019 with true earnings
         Note that for 2016 for chelsea we don't have actual payroll so I will use rough estimation, need better
@@ -434,10 +450,7 @@ class PoliceDepartment(Agency):
         self.pensions = self.add_pension_costs(PD_fraction_non_teacher)
         self.fringe, fringe_PD_budget = self.add_fringe_benefits(PD_fraction_total)
         self.payroll = PD_payroll
-        if self.alias == "Boston PD":
-            self.fraction_spending_federal = self.federal_expenditures_by_year/self.budget_summary.loc["Total Expenditures",
-                                                                                                       list(range(2016, 2020))]
-            self.payroll_by_year = total_earnings * (1-self.fraction_spending_federal)
+
         if self.alias == "Chelsea PD":
             self.payroll_by_year = total_earnings
         self.payroll_expenditures_by_year = self.budget_summary.loc[
@@ -456,76 +469,14 @@ class PoliceDepartment(Agency):
             self.non_payroll_operating_expenditures_by_year.loc[list(range(2016, 2020))]
         self.operating_costs = self.payroll_by_year + self.non_payroll_operating_expenditures_by_year
 
-        #Somehow boston's year range goes through 2021. so much to fix during refactor
         self.capital_expenditures_by_year = self.capital_expenditures_by_year.loc[list(range(2016,2020))]
 
-    def scrape(self):
-        file_path = saved_scraped_path + self.alias + ".csv"
 
-        if os.path.exists(file_path):
-            self.budget_summary = pd.read_csv(file_path, index_col=0)
-            self.budget_summary.columns = [int(x) for x in self.budget_summary.columns]
-            if self.alias in ["Boston PD", "Chelsea PD"]:
-                self.capital_expenditures_by_year = pd.read_json(
-                    saved_scraped_path + self.alias + "_capital_expenditures.json",
-                    typ='series', orient='records')
-        else:
-            self.from_PDF()
-            self.budget_summary.to_csv(file_path)
-            if self.alias in ["Boston PD", "Chelsea PD"]:
-                self.capital_expenditures_by_year.to_json(
-                    saved_scraped_path + self.alias + "_capital_expenditures.json")
 
     def get_final_costs(self, apply_correction=True, add_hidden_costs=True, pensions_statewide=None):
         """Pensions_statewide shouldn't be passed in, better solution should be found but I'm up against deadline"""
 
-        return self.operating_costs + self.pensions + self.fringe + self.capital_expenditures_by_year
-
-    def add_budget_by_year(self, client=None):
-        """Last updated by August 3rd"""
-        pass
-
-
-class BostonPD(PoliceDepartment):
-    """Last updated July 16th to get capital projects, external funds.
-    There's no single number that combines operating budget, external funds, and capital budget so I'll have to add
-    them myself. I'll know I did it right if my numbers match vera's"""
-
-    def __init__(self, url_dict=None):
-        year_range = list(range(2016, 2022))
-        big_range = list(range(2010, 2022))  # New July 16th
-        PoliceDepartment.__init__(self, "Boston PD", "Boston PD", year_range)
-        self.url_dict = url_dict  # Maps dataset alias to API url
-        self.operating_budget = None  # From API
-        self.mission = "The mission of the Police Department is Neighborhood Policing"
-        self.federal_expenditures_by_year = BostonPD_External_Funds()  # New August 14th
-
-        self.non_payroll_operating_expenditures_by_year, self.fraction_all_federal, self.non_hidden_fringe = \
-            get_BostonPD_Non_Payroll_Operating(self)
-        self.add_true_earnings()
-        self.pensions = BostonPD_Pensions(self)
-        self.fringe = BostonPD_Fringe(self) + self.non_hidden_fringe
-        self.capital_expenditures_by_year = get_BostonPD_Capital_Costs(self)
-        if self.url_dict:
-            self.add_operating_budget()
-        self.budget_summary = pd.DataFrame(columns=big_range, index=["Payroll Budget",
-                                                                     "OT Budget",
-                                                                     "Total Budget",
-                                                                     "Payroll Appropriation",
-                                                                     "OT Appropriation",
-                                                                     "Total Appropriation",
-                                                                     "Payroll Expenditures",
-                                                                     "OT Expenditures",
-                                                                     "Total Expenditures"]).fillna(0)
-
-    def add_true_earnings(self):
-        """New July 30th. Replace expenditure numbers 2016-2019 with true earnings
-        Note that for 2016 for chelsea we don't have actual payroll so I will use rough estimation, need better
-         way to fix later"""
-        total_earnings, self.PD_fraction_non_teacher, self.PD_fraction_total, PD_payroll = True_Earnings(self.alias)
-        self.payroll = PD_payroll
-        self.payroll_by_year = total_earnings * (1-self.fraction_all_federal)
-
+        return self.non_payroll_operating_expenditures_by_year + self.payroll_by_year + self.pensions + self.fringe + self.capital_expenditures_by_year
 
 class ChelseaPD(PoliceDepartment):
     """Created by Sasha on June 25th. As of right now I don't have access to API for Chelsea's open data site

@@ -25,7 +25,6 @@ def get_BostonPD_Non_Payroll_Operating(agency):
     out_df.loc["External Payroll Expend", 2016] = 4387452
 
     #From 2020 Document
-
     out_df.loc["Total Operating Expend", 2017] = 364594820
     out_df.loc["Payroll Expend", 2017] = 332157566
     out_df.loc["Fringe Expend", 2017] = 132926
@@ -33,7 +32,6 @@ def get_BostonPD_Non_Payroll_Operating(agency):
     out_df.loc["External Payroll Expend", 2017] = 3919606
 
     #From 2021 Document
-
     out_df.loc["Total Operating Expend", 2018] = 399924493
     out_df.loc["Payroll Expend", 2018] = 357456096
     out_df.loc["Fringe Expend", 2018] = 123164
@@ -45,7 +43,6 @@ def get_BostonPD_Non_Payroll_Operating(agency):
     out_df.loc["Fringe Expend", 2019] = 101000
     out_df.loc["Total External Expend", 2019] = 7519387
     out_df.loc["External Payroll Expend", 2019] = 3194567
-
 
     external_federal = BostonPD_External_Funds()
 
