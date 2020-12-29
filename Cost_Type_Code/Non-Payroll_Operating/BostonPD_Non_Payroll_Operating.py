@@ -16,7 +16,7 @@ def get_BostonPD_Non_Payroll_Operating(agency):
                                  "Total External Expend",
                                  "External Payroll Expend"], columns=yr)
 
-    external_federal = BostonPD_External_Funds()
+
     #From 2019 Document
     out_df.loc["Total Operating Expend", 2016] = 348887844
     out_df.loc["Payroll Expend", 2016] = 319608659
@@ -46,14 +46,15 @@ def get_BostonPD_Non_Payroll_Operating(agency):
     out_df.loc["Total External Expend", 2019] = 7519387
     out_df.loc["External Payroll Expend", 2019] = 3194567
 
+
+    external_federal = BostonPD_External_Funds()
+
     #This is money from "operating budget" section that goes to non-payroll operating costs attr
     total_operating_non_payroll = out_df.loc["Total Operating Expend"] - out_df.loc["Payroll Expend"] - \
                                   out_df.loc["Fringe Expend"]
 
     #Frind what fraction of total external dollars are federal
     fraction_external_federal = external_federal/out_df.loc["Total External Expend"]
-    print("fraction external dollars that are federal")
-    display(fraction_external_federal)
 
     #Take out payroll dollars from external budget too
     external_non_payroll = out_df.loc["Total External Expend"] - out_df.loc["External Payroll Expend"]
@@ -61,17 +62,16 @@ def get_BostonPD_Non_Payroll_Operating(agency):
     #Estimate fraction of remaining external dollars that are NOT federal
     external_non_payroll_non_federal = external_non_payroll*(1-fraction_external_federal)
 
+
     total_non_payroll = total_operating_non_payroll + external_non_payroll_non_federal
 
     #Fraction all non-federal isn't used in this func. Is is used to remove federal dollars from earnings record
-    fraction_all_non_federal = external_federal/(out_df.loc["Total Operating Expend"]+\
+    fraction_all_federal = external_federal/(out_df.loc["Total Operating Expend"]+\
                                                  out_df.loc["External Payroll Expend"])
-    print("fraction all non-federal ")
-    display(fraction_all_non_federal)
 
 
 
 
-    return total_non_payroll, fraction_all_non_federal, \
+    return total_non_payroll, fraction_all_federal, \
            out_df.loc["Fringe Expend"] #Return fringe to be added in fringe calculation
 

@@ -16,3 +16,5 @@ def get_BostonPD_Capital_Costs(agency):
     #From FY21 Document
     capital_costs_by_year.loc[2018] = 18625711
     capital_costs_by_year.loc[2019] = 8502943
+
+    return capital_costs_by_year

@@ -500,9 +500,9 @@ class BostonPD(PoliceDepartment):
         self.mission = "The mission of the Police Department is Neighborhood Policing"
         self.federal_expenditures_by_year = BostonPD_External_Funds()  # New August 14th
 
-        self.non_payroll_operating_expenditures_by_year, self.fraction_all_non_federal, self.non_hidden_fringe = \
+        self.non_payroll_operating_expenditures_by_year, self.fraction_all_federal, self.non_hidden_fringe = \
             get_BostonPD_Non_Payroll_Operating(self)
-        self.true_earnings()
+        self.add_true_earnings()
         self.pensions = BostonPD_Pensions(self)
         self.fringe = BostonPD_Fringe(self) + self.non_hidden_fringe
         self.capital_expenditures_by_year = get_BostonPD_Capital_Costs(self)
@@ -518,165 +518,13 @@ class BostonPD(PoliceDepartment):
                                                                      "OT Expenditures",
                                                                      "Total Expenditures"]).fillna(0)
 
-    def true_earnings(self):
+    def add_true_earnings(self):
         """New July 30th. Replace expenditure numbers 2016-2019 with true earnings
         Note that for 2016 for chelsea we don't have actual payroll so I will use rough estimation, need better
          way to fix later"""
         total_earnings, self.PD_fraction_non_teacher, self.PD_fraction_total, PD_payroll = True_Earnings(self.alias)
-
         self.payroll = PD_payroll
-
-        self.payroll_by_year = total_earnings * self.fraction_all_non_federal
-
-
-
-    def from_PDF(self):
-        """Last updated July 16th to pare down final budget summary df in a more clear way. To do: take out to_float()
-        because I convert to float in bp_to_list now"""
-        payroll_signifier = "51000 Permanent Employees"
-        for y in [2016, 2017, 2020, 2021]:
-            pdf_path = data_dir_path + "bostonPD/boston_FY" + str(y)[2:] + ".pdf"
-            self.PDF_scraper_extractable(y, pdf_path, payroll_signifier)
-        for y in [2018, 2019]:
-            path = data_dir_path + "bostonPD/boston_FY" + str(y)[2:]
-            self.PDF_scraper_non_extractable(y, path, payroll_signifier)
-        self.budget_summary = self.budget_summary.loc[:, self.year_range]
-        self.to_float()  # Probably don't need this, should take it out eventually
-
-    def PDF_scraper_extractable(self, year, path, payroll_signifier):
-        """Written by Sasha on June 29th to get data from a particular pdf and get it budget summary df
-        As of July 2nd: added 2021 budget, otherwise seems clean"""
-        budget_obj = PdfFileReader(path)
-        overall_found = False
-        PD_section = False
-        external = False
-        correction = None
-        for i in range(budget_obj.getNumPages()):
-            if "/Contents" in budget_obj.getPage(i).keys() and \
-                    self.match_mission(self.mission, budget_obj.getPage(i).extractText()) is not None:
-                PD_section = True
-            # if PD_section and not overall_found and "Operating Budget" in budget_obj.getPage(i).extractText():
-            #     bp = budget_obj.getPage(i).extractText().replace("\n", " ")
-            #     dollar_amounts_overall = self.bp_to_list(bp, "Total\s+\d+", 5)
-            #     self.update_budget_summary(year, dollar_amounts_overall, "Overall")
-            #     overall_found = True
-            if PD_section and payroll_signifier in budget_obj.getPage(i).extractText():
-                bp = budget_obj.getPage(i).extractText().replace("\n", " ")
-                total_dollar_amounts = self.bp_to_list(bp, "Grand Total")
-                if external and year - 2 in self.federal_expenditures_by_year.index:
-                    correction = 1 - self.federal_expenditures_by_year.loc[year - 2] / total_dollar_amounts[1]
-                self.update_budget_summary(year, total_dollar_amounts, "Overall", correction)
-                OT_dollar_amounts = self.bp_to_list(bp, "vertime")
-                self.update_budget_summary(year, OT_dollar_amounts, "OT", correction)
-                payroll_dollar_amounts = self.bp_to_list(bp, "Total Personnel Services")
-                self.update_budget_summary(year, payroll_dollar_amounts, "Payroll", correction)
-                external = True
-            if PD_section and "Police Department Capital Budget" in budget_obj.getPage(i).extractText():
-                bp = budget_obj.getPage(i).extractText().replace("\n", " ")
-                capital_projects_amounts = self.bp_to_list(bp, "Total Department")
-                self.update_capital_expenditures(year, capital_projects_amounts)
-                break
-
-    def PDF_scraper_non_extractable(self, year, path, payroll_signifier):
-        """This code was given it's own function on July 7th"""
-        full_text = self.text_from_pdf(path)
-        mission_position = [x for x in re.finditer(self.mission, full_text)]
-        assert len(mission_position) == 1, "Found multiple mission statements for cops"
-        PD_text = full_text[mission_position[0].start():]
-        # dollar_amounts_overall = self.bp_to_list(PD_text, "Total\s+\d+", 5)
-        # self.update_budget_summary(year, dollar_amounts_overall, "Overall")
-        payroll_position = [x for x in re.finditer(payroll_signifier, PD_text)]
-        if year == 2018:
-            payroll_text = PD_text[payroll_position[0].start():]
-            self.alt_get_dollar_amounts_payroll(year)
-        else:
-            correction = None
-            for i in range(2):
-                payroll_text = PD_text[payroll_position[i].start():]
-                overall_dollar_amounts = self.bp_to_list(payroll_text, "Grand Total")
-                if i == 1 and year - 2 in self.federal_expenditures_by_year.columns:
-                    correction = 1 - self.federal_expenditures_by_year.loc[year - 2] / overall_dollar_amounts[1]
-                self.update_budget_summary(year, overall_dollar_amounts, "Overall", correction)
-                OT_dollar_amounts = self.bp_to_list(payroll_text, "vertime")
-                self.update_budget_summary(year, OT_dollar_amounts, "OT", correction)
-                payroll_dollar_amounts = self.bp_to_list(payroll_text, "Total Personnel Services")
-                self.update_budget_summary(year, payroll_dollar_amounts, "Payroll", correction)
-        capital_budget_position = re.search("Police Department Capital Budget", PD_text)
-        capital_budget_text = PD_text[capital_budget_position.start():]
-        capital_dollar_amounts = self.bp_to_list(capital_budget_text, "Total Department")
-        self.update_capital_expenditures(year, capital_dollar_amounts)
-
-    def alt_get_dollar_amounts_payroll(self, year):
-        """Need workaround for 2018 because OCR doesn't read it in right
-        New July 16th: add external funds (second integer)"""
-        correction = 1 - self.federal_expenditures_by_year.loc[year - 2] / 9562319
-        self.budget_summary.loc["Payroll Budget", year] = 337939296 + 4789220 * correction
-        self.budget_summary.loc["Payroll Appropriation", year - 1] = 328663838 + 4383901 * correction
-        self.budget_summary.loc["Payroll Expenditures", year - 2] = 319608659 + 4387452 * correction
-        self.budget_summary.loc["OT Budget", year] = 56494667 + 1067784 * correction
-        self.budget_summary.loc["OT Appropriation", year - 1] = 55660719 + 566556 * correction
-        self.budget_summary.loc["OT Expenditures", year - 2] = 57479518 + 570673 * correction
-        self.budget_summary.loc["Total Budget", year] = 373814105 + 11506920 * correction
-        self.budget_summary.loc["Total Appropriation", year - 1] = 364321048 + 10498013 * correction
-        self.budget_summary.loc["Total Expenditures", year - 2] = 348887844 + 9562319 * correction
-
-    def update_budget_summary(self, year, dollar_amounts, line_item, correction):
-        """Updated by Sasha on August 17th to correct for federal/private dollars in federal funds"""
-        if correction:
-            dollar_amounts = [x * correction for x in dollar_amounts]
-
-        if line_item == "Overall":
-            assert dollar_amounts is not None, "Dollar amounts for " + str(year) + " Boston operating budget not found"
-            self.budget_summary.loc["Total Budget", year] += dollar_amounts[3]
-            self.budget_summary.loc["Total Appropriation", year - 1] += dollar_amounts[2]
-            self.budget_summary.loc["Total Expenditures", year - 2] += dollar_amounts[1]
-            print("for year", year, "boston had", dollar_amounts[1] * (1 - correction), "in federal spending")
-        elif line_item == "OT":
-            assert dollar_amounts is not None, "Dollar amounts for " + str(year) + " Boston PD overtime pay not found"
-            self.budget_summary.loc["OT Budget", year] += dollar_amounts[3]
-            self.budget_summary.loc["OT Appropriation", year - 1] += dollar_amounts[2]
-            self.budget_summary.loc["OT Expenditures", year - 2] += dollar_amounts[1]
-        elif line_item == "Payroll":
-            assert dollar_amounts is not None, "Dollar amounts for " + str(year) + " Boston PD total pay not found"
-            self.budget_summary.loc["Payroll Budget", year] += dollar_amounts[3]
-            self.budget_summary.loc["Payroll Appropriation", year - 1] += dollar_amounts[2]
-            self.budget_summary.loc["Payroll Expenditures", year - 2] += dollar_amounts[1]
-
-    def update_capital_expenditures(self, year, dollar_amounts):
-        """New August 20th to get capital expenditures in seperate attribute"""
-        print("got to update capital expenditures for year", year)
-        self.capital_expenditures_by_year[year - 2] = dollar_amounts[1]
-
-    def add_operating_budget(self):
-        """Written by Sasha on June 23rd"""
-        file_name = self.alias + "_operating_budget.csv"
-        boston_df = self.find_data(file_name, client=None, dataset="operating_budget")
-        self.operating_budget = boston_df[boston_df["Dept"] == "Police Department"]
-        budget_cols = [i for i in self.operating_budget.columns if "18" in i or "19" in i or "20" in i or "21" in i]
-        for x in budget_cols:
-            self.operating_budget[x] = self.operating_budget[x].str.replace(",", "")
-            self.operating_budget[x] = self.operating_budget[x].str.replace("-", "0").astype(float)
-
-    def get_Boston_PD_expenditures(self):
-        """Written by Sasha on June 23rd. The Boston PD has two years of expenditures in it's operating budget dataset
-        For now just take these. It's incomplete but without guidance from Bobby it makes sense to just take what's
-        easiest to find and download.
-        This has been depreciated, can be deleted when this all working"""
-        expenditure_cols = ["FY18 Actual", "FY19 Actual"]
-        return self.operating_budget[["Expense Category"] + expenditure_cols]
-
-    def get_expenditures_by_year(self, client=None):
-        """Written by Sasha on June 24th so all agencies have the same functions called in exploratory main"""
-
-        expenditure_cols = ["FY18 Actual", "FY19 Actual"]
-        expenditures_by_year = self.operating_budget[["Expense Category"] + expenditure_cols] \
-            .groupby("Expense Category").sum()
-        expenditures_by_year.loc[self.alias + " Total Expenditures"] = expenditures_by_year.sum()
-        expenditures_by_year.rename(columns={"FY18 Actual": 2018, "FY19 Actual": 2019},
-                                    index={"Personnel Services": "Boston PD Expenditure on Personnel Services"},
-                                    inplace=True)
-        return expenditures_by_year.loc[["Boston PD Expenditure on Personnel Services",
-                                         self.alias + " Total Expenditures"]]
+        self.payroll_by_year = total_earnings * (1-self.fraction_all_federal)
 
 
 class ChelseaPD(PoliceDepartment):
