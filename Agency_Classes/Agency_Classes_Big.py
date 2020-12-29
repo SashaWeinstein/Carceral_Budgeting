@@ -138,6 +138,22 @@ class StateAgency(Agency):
             self.expenditures = self.find_data(file_name, client, "pegc-naaa", self.construct_expenditures_SOQL)
             self.expenditures["amount"] = self.expenditures["amount"].astype(float)
             self.expenditures["budget_fiscal_year"] = self.expenditures["budget_fiscal_year"].astype(int)
+            federal_payroll_expenditures = self.expenditures[\
+                (self.expenditures["appropriation_type"].str.contains("(?i)federal")) &
+                (self.expenditures["vendor"].str.contains("(?i)payroll"))]
+            # print("federal payroll expenditures for", self.alias)
+            federal_payroll_expenditures_by_year = federal_payroll_expenditures.groupby("budget_fiscal_year")["amount"].sum()
+            # display(federal_payroll_expenditures)
+            self.fraction_payroll_federal = federal_payroll_expenditures_by_year/ \
+                self.expenditures[self.expenditures["vendor"].str.contains("(?i)payroll")]\
+                    .groupby("budget_fiscal_year")["amount"].sum()
+            self.fraction_payroll_federal = self.fraction_payroll_federal.loc[self.year_range].fillna(0)
+            # print("total dollars federal payroll")
+            # display(federal_payroll_expenditures_by_year)
+            # print("fraction payroll expenditures federal")
+            # display(self.fraction_payroll_federal)
+            # print()
+
             self.expenditures = self.expenditures[
                 self.expenditures["appropriation_type"].str.contains("INTRAGOVERNMENTAL") == False]
             self.federal_expenditures = self.expenditures[
@@ -210,9 +226,15 @@ class StateAgency(Agency):
         """Written by Sasha on June 24th to take code from exploratory main"""
         self.add_payroll(False)
         payroll_by_calendar_year = self.payroll.groupby("year")[self.pay_col].sum().T
+        payroll_by_FY = pd.Series(index = self.year_range)
         for y in self.year_range:
-            self.payroll_by_year[y] = .5 * payroll_by_calendar_year.loc["pay_total_actual", y - 1] + \
+            payroll_by_FY[y] = .5 * payroll_by_calendar_year.loc["pay_total_actual", y - 1] + \
                                       .5 * payroll_by_calendar_year.loc["pay_total_actual", y]
+        # print("payroll before federal correction")
+        # display(payroll_by_FY)
+        self.payroll_by_year = payroll_by_FY * (1-self.fraction_payroll_federal)
+        # print("payroll after")
+        # display(self.payroll_by_year)
 
     def add_budget(self):
         """Created by Sasha on June 22nd
@@ -334,10 +356,12 @@ class CPCS(StateAgency):
         with public counsel spending"""
         self.add_payroll(total_OT_only)
         payroll_by_calendar_year = self.payroll.groupby("year")[self.pay_col].sum().T
+        payroll_by_FY = pd.Series(index=self.year_range)
         for y in self.year_range:
-            self.payroll_by_year[y] = .5 * payroll_by_calendar_year.loc["pay_total_actual", y - 1] + \
+            payroll_by_FY.loc[y] = .5 * payroll_by_calendar_year.loc["pay_total_actual", y - 1] + \
                                       .5 * payroll_by_calendar_year.loc["pay_total_actual", y]
 
+        self.payroll_by_year = payroll_by_FY*(1-self.fraction_payroll_federal)
 
 
 
@@ -408,7 +432,12 @@ class PoliceDepartment(Agency):
         self.pensions = self.add_pension_costs(PD_fraction_non_teacher)
         self.fringe, fringe_PD_budget = self.add_fringe_benefits(PD_fraction_total)
         self.payroll = PD_payroll
-        self.payroll_by_year = total_earnings
+        if self.alias == "Boston PD":
+            self.fraction_spending_federal = self.federal_expenditures_by_year/self.budget_summary.loc["Total Expenditures",
+                                                                                                       list(range(2016, 2020))]
+            self.payroll_by_year = total_earnings * (1-self.fraction_spending_federal)
+        if self.alias == "Chelsea PD":
+            self.payroll_by_year = total_earnings
         self.payroll_expenditures_by_year = self.budget_summary.loc[
             "Payroll Expenditures", list(range(2016, 2020))]  # Need to fix year range
         if self.alias == "Chelsea PD":
