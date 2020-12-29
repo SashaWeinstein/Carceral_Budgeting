@@ -4,8 +4,9 @@ import pandas as pd
 
 big_path = "/Users/alexanderweinstein/Documents/Harris/Summer2020/Carceral_Budgeting/Exploratory/data/"
 
-def BostonPD_Pensions(PD_fraction):
+def BostonPD_Pensions(agency):
     """PD_fraction is series that maps year to % of non-teacher payroll that Boston PD makes up"""
+    PD_fraction = agency.PD_fraction_non_teacher
     pension_contributions = pd.DataFrame(columns=list(range(2016, 2021)),
                                          index=["Pension Budget",
                                                 "Pension Expenditures"])

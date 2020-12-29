@@ -64,7 +64,6 @@ def scrape_payroll(existing_results_path=None, debug_mode=False):
         json_content = json.dumps(out_dict, indent=4)
 
         with open(abs_path_start + existing_results_path, 'w') as out:
-            print("got here")
             json.dump(json_content, out)
     return out_dict
 

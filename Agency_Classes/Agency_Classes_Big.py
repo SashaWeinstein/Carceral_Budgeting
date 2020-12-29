@@ -25,10 +25,12 @@ from LocalPD_Pensions import BostonPD_Pensions, ChelseaPD_Pensions, ReverePD_Pen
 from LocalPD_Fringe import BostonPD_Fringe, ChelseaPD_Fringe, ReverePD_Fringe
 from Statewide_Fringe import Total_Statewide_Fringe
 from Statewide_Payroll import Total_Statewide_Payroll, Fraction_Statewide_Payroll
-from LocalPD_External_Funds import BostonPD_External_Funds_Correction
+from LocalPD_External_Funds import BostonPD_External_Funds
 from DCP_Capital import get_capital_expenditures
 from ReverePD_Capital_Costs import get_ReverePD_Capital_Costs
 from Agency_Corrections import trial_court_pcnt_criminal
+from BostonPD_Non_Payroll_Operating import get_BostonPD_Non_Payroll_Operating
+from BostonPD_Capital import get_BostonPD_Capital_Costs
 
 from Agency_Parent import Agency
 
@@ -496,9 +498,14 @@ class BostonPD(PoliceDepartment):
         self.url_dict = url_dict  # Maps dataset alias to API url
         self.operating_budget = None  # From API
         self.mission = "The mission of the Police Department is Neighborhood Policing"
-        self.federal_expenditures_by_year = BostonPD_External_Funds_Correction().iloc[0, :]  # New August 14th
-        self.add_pension_costs = BostonPD_Pensions
-        self.add_fringe_benefits = BostonPD_Fringe
+        self.federal_expenditures_by_year = BostonPD_External_Funds()  # New August 14th
+
+        self.non_payroll_operating_expenditures_by_year, self.fraction_all_non_federal, self.non_hidden_fringe = \
+            get_BostonPD_Non_Payroll_Operating(self)
+        self.true_earnings()
+        self.pensions = BostonPD_Pensions(self)
+        self.fringe = BostonPD_Fringe(self) + self.non_hidden_fringe
+        self.capital_expenditures_by_year = get_BostonPD_Capital_Costs(self)
         if self.url_dict:
             self.add_operating_budget()
         self.budget_summary = pd.DataFrame(columns=big_range, index=["Payroll Budget",
@@ -510,9 +517,18 @@ class BostonPD(PoliceDepartment):
                                                                      "Payroll Expenditures",
                                                                      "OT Expenditures",
                                                                      "Total Expenditures"]).fillna(0)
-        self.scrape()
-        self.Add_True_Earnings()
-        self.get_final_costs()
+
+    def true_earnings(self):
+        """New July 30th. Replace expenditure numbers 2016-2019 with true earnings
+        Note that for 2016 for chelsea we don't have actual payroll so I will use rough estimation, need better
+         way to fix later"""
+        total_earnings, self.PD_fraction_non_teacher, self.PD_fraction_total, PD_payroll = True_Earnings(self.alias)
+
+        self.payroll = PD_payroll
+
+        self.payroll_by_year = total_earnings * self.fraction_all_non_federal
+
+
 
     def from_PDF(self):
         """Last updated July 16th to pare down final budget summary df in a more clear way. To do: take out to_float()
