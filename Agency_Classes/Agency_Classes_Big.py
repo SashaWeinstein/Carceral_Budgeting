@@ -63,7 +63,8 @@ class StateAgency(Agency):
 
     def __init__(self, alias, official_name, year_range, category, correction_function=None, settlement_agencies=None,
                  payroll_vendors=[], payroll_official_name=None, client=None,
-                 pension_function=pensions_from_payouts_fraction):
+                 pension_function=pensions_from_payouts_fraction,
+                 remove_R24=False):
         Agency.__init__(self, alias, official_name, year_range, category, correction_function)
         self.client = client
         self.payroll_official_name = payroll_official_name  # MBTA is lowercase in payroll system for some reason
@@ -88,6 +89,7 @@ class StateAgency(Agency):
         self.expenditures_by_year = pd.DataFrame(columns=self.year_range)
         self.budget_by_year = pd.DataFrame(columns=self.year_range)
         self.operating_costs = None  # This is where cost type "operating costs" will be stored
+        self.remove_R24 = remove_R24
         self.get_expenditures_by_year()
         self.add_payroll_by_year()
         # Code to get payroll fraction should be moved somewhere else
@@ -127,7 +129,7 @@ class StateAgency(Agency):
         else:
             return self.final_cost
 
-    def add_expenditures(self, client):
+    def add_expenditures(self, client, remove_R24=False):
         """Adds expenditures for agency over the given year range
         Uses this dataset https://cthru.data.socrata.com/dataset/Comptroller-of-the-Commonwealth-Spending/pegc-naaa
         client is Socrata object
@@ -142,18 +144,12 @@ class StateAgency(Agency):
             federal_payroll_expenditures = self.expenditures[\
                 (self.expenditures["appropriation_type"].str.contains("(?i)federal")) &
                 (self.expenditures["vendor"].str.contains("(?i)payroll"))]
-            # print("federal payroll expenditures for", self.alias)
             federal_payroll_expenditures_by_year = federal_payroll_expenditures.groupby("budget_fiscal_year")["amount"].sum()
-            # display(federal_payroll_expenditures)
             self.fraction_payroll_federal = federal_payroll_expenditures_by_year/ \
                 self.expenditures[self.expenditures["vendor"].str.contains("(?i)payroll")]\
                     .groupby("budget_fiscal_year")["amount"].sum()
             self.fraction_payroll_federal = self.fraction_payroll_federal.loc[self.year_range].fillna(0)
-            # print("total dollars federal payroll")
-            # display(federal_payroll_expenditures_by_year)
-            # print("fraction payroll expenditures federal")
-            # display(self.fraction_payroll_federal)
-            # print()
+
 
             self.expenditures = self.expenditures[
                 self.expenditures["appropriation_type"].str.contains("INTRAGOVERNMENTAL") == False]
@@ -173,6 +169,14 @@ class StateAgency(Agency):
                 self.expenditures["object_class"] == "(DD) PENSION & INSURANCE RELATED EX"]
             self.expenditures = self.expenditures[
                 self.expenditures["object_class"] != "(DD) PENSION & INSURANCE RELATED EX"]
+            #Don't like this it's janky but it's real important I get correct results
+            if self.remove_R24:
+                print("got here for CPCS")
+                self.R24 = self.expenditures[(self.expenditures["object_code"] == "(R24) PUBLIC COUNSEL") &
+                                                   (self.expenditures["vendor"].str.contains("(?i)payroll") == False)]
+                print("expenditures df has ", self.expenditures.shape[0], " rows before taking out public counsel")
+                self.expenditures = self.expenditures[self.expenditures["object_code"] != "(R24) PUBLIC COUNSEL"]
+                print("expenditures df has ", self.expenditures.shape[0], " rows after taking out public counsel")
 
     def get_expenditures_payroll(self):
         assert type(self.expenditures) == pd.core.frame.DataFrame, \
@@ -231,11 +235,7 @@ class StateAgency(Agency):
         for y in self.year_range:
             payroll_by_FY[y] = .5 * payroll_by_calendar_year.loc["pay_total_actual", y - 1] + \
                                       .5 * payroll_by_calendar_year.loc["pay_total_actual", y]
-        # print("payroll before federal correction")
-        # display(payroll_by_FY)
         self.payroll_by_year = payroll_by_FY * (1-self.fraction_payroll_federal)
-        # print("payroll after")
-        # display(self.payroll_by_year)
 
     def add_budget(self):
         """Created by Sasha on June 22nd
@@ -309,60 +309,6 @@ class StateAgency(Agency):
         SOQL = SOQL[:-4] + ") AND bfy >= " + str(self.year_range[0])
         return SOQL
 
-
-class CPCS(StateAgency):
-
-    def __init__(self, alias, official_name, year_range, payroll_vendors, category, client, correction_function,
-                 settlement_agencies):
-        StateAgency.__init__(self, alias, official_name, year_range, category, correction_function, settlement_agencies,
-                             payroll_vendors, None, client)
-
-
-    def get_final_costs(self, apply_correction=True):
-        """Created August 12 for new methodology where we use expenditures for everything"""
-        if not self.final_costs_calculated:
-            self.final_costs_calculated = True
-            # self.add_expenditures(client)
-            # self.get_expenditures_by_year()
-            self.RR_correction()
-            self.add_settlements()
-            self.add_payroll_by_year()
-            self.add_fringe()
-            self.payroll_by_year += self.R24_by_year #This is dangerous but it's ok for now. After refactor, cthru_payroll_by_year and final_payroll_by_year should be split into two categories
-            self.operating_costs = self.expenditures_by_year.loc["Total Expenditures"]
-            # New Aug 24th: split operating costs into payroll, non-payroll
-
-            if self.alias in DCP_capital_expenditures.index:
-                self.capital_expenditures_by_year += DCP_capital_expenditures.loc[self.alias, self.year_range]
-
-            self.final_cost = self.payroll_by_year + self.non_payroll_operating_expenditures_by_year + \
-                              self.settlements + self.fringe + \
-                              self.capital_expenditures_by_year
-
-        if apply_correction:
-            return self.correction_function(self.final_cost)
-        else:
-            return self.final_cost
-
-    def RR_correction(self):
-        """Written 12/17 to move public counsel dollars from expenditures to payroll"""
-        public_counsel = self.expenditures[(self.expenditures["object_code"] == "(R24) PUBLIC COUNSEL") &
-                                           (self.expenditures["vendor"].str.contains("(?i)payroll") == False)]
-        self.expenditures = self.expenditures[self.expenditures["object_code"] != "(R24) PUBLIC COUNSEL"]
-        self.R24_by_year = public_counsel.groupby("budget_fiscal_year").sum()["amount"].loc[self.year_range]
-
-
-    def add_payroll_by_year(self, total_OT_only=False):
-        """Special version of this function for CPCS gets payroll by year already created in RR_correction and populated
-        with public counsel spending"""
-        self.add_payroll(total_OT_only)
-        payroll_by_calendar_year = self.payroll.groupby("year")[self.pay_col].sum().T
-        payroll_by_FY = pd.Series(index=self.year_range)
-        for y in self.year_range:
-            payroll_by_FY.loc[y] = .5 * payroll_by_calendar_year.loc["pay_total_actual", y - 1] + \
-                                      .5 * payroll_by_calendar_year.loc["pay_total_actual", y]
-
-        self.payroll_by_year = payroll_by_FY*(1-self.fraction_payroll_federal)
 
 
 
