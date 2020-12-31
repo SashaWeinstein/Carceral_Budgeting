@@ -2,14 +2,20 @@
 import sys
 sys.path.insert(0, "/Users/alexanderweinstein/Documents/Harris/Summer2020/Carceral_Budgeting/Exploratory/Agency_Classes/")
 
-from Agency_Classes_Big import StateAgency, ChelseaPD, ReverePD, WinthropPD
-from DOC import DOC
+from Agency_Classes_Big import ChelseaPD, ReverePD, WinthropPD
+from State_Agency import StateAgency
 from MBTA import MBTA
 from BostonPD import BostonPD
 from sodapy import Socrata
 from CPCS import CPCS
 from Agency_Corrections import trial_court_correction, DOC_correction, \
     appeals_court_correction, population_correction
+
+
+cost_type_dir = "/Users/alexanderweinstein/Documents/Harris/Summer2020/Carceral_Budgeting/Exploratory/Cost_Type_Code/"
+sys.path.insert(0, "%sPensions" % cost_type_dir)
+from Pensions_Final import pensions_from_payroll_fraction
+
 
 app_token = "2Qa1WiG8G4kj1vGVd2noK7zP0"
 client = Socrata("cthru.data.socrata.com", app_token)
@@ -31,10 +37,11 @@ def get_agencies(yr):
                                    correction_function=trial_court_correction,
                                    settlement_agencies=["COMMITTEE FOR PUBLIC COUNSEL SERVICES"])
 
-    out_dict["DOC"] = DOC(alias="DOC", official_name="DEPARTMENT OF CORRECTION (DOC)", year_range=yr,
+    out_dict["DOC"] = StateAgency(alias="DOC", official_name="DEPARTMENT OF CORRECTION (DOC)", year_range=yr,
                                   payroll_vendors=["DOC - SUMMARY PAYROLL"], client=client, category="Jails",
                                   correction_function=DOC_correction,
-                                  settlement_agencies=["DEPARTMENT OF CORRECTION", "PAROLE BOARD"])
+                                  settlement_agencies=["DEPARTMENT OF CORRECTION", "PAROLE BOARD"],
+                                  pension_function=pensions_from_payroll_fraction)
     out_dict["Suffolk DA"] = StateAgency(alias="Suffolk_DA", official_name="SUFFOLK DISTRICT ATTORNEY (SUF)",
                                          year_range=yr,
                                          payroll_vendors=["SUF - SUMMARY PAYROLL"], client=client, category="Legal",

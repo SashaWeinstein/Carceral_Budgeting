@@ -5,7 +5,6 @@ from Statewide_Pensions import pensions_by_agency
 
 by_agency, contributions_by_year = pensions_by_agency(requery=False)
 
-
 def pensions_from_payouts_fraction(agency):
     alias, yr = agency.alias, agency.year_range
     if alias == "trial_court":

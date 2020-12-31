@@ -53,22 +53,7 @@ class Agency():
         assert category in ["Legal", "Jails", "Police",
                             "Other"], "Category for" + self.alias + "not an existing category"
 
-    def find_data(self, file_name, client, dataset, SOQL_constructor=None):
-        """Last updated July 9th to allow for re-querying and overwriting csv's
-        Look for matching csv in data directory, if it's there not fetch it from API
-        file_name is generated from agency, dataset
-        client is Socrata object
-        dataset is name of dataset in cthru system"""
-        file_path = data_dir_path + file_name
-        if not self.requery and os.path.exists(file_path):
-            df = pd.read_csv(file_path)
-        else:
-            result_json = self.API_call(client=client, dataset=dataset,
-                                        SOQL_constructor=SOQL_constructor)  # State and Municipal Agencies have different API calls
-            df = pd.DataFrame(result_json)
-            assert df.shape[0] < 999999, "Dataset found with more than 999999 records, need to up limit"
-            df.to_csv(file_path)
-        return df
+
 
     def API_call(self, client, dataset, SOQL_constructor):
         """Moved from StateAgency to Parent Agency class on July 2nd"""

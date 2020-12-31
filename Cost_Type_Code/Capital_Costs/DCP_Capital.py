@@ -6,13 +6,10 @@ for through the relevant agency w/ appropriation code (2CN) CAPITAL. It seems to
 through DCP and smaller projects are through the agency's expenditures but that's just my sense from glancing at it"""
 
 import pandas as pd
-import numpy as np
-import os
 import sys
-from sodapy import Socrata
 
 sys.path.insert(0, "../")
-from Find_Data import find_data
+from Agency_Classes.Agency_Helpers.Find_Data import find_data
 
 # Note that right now I assign all court expenditures to trial court, they could be spread out across legal category too
 carceral_appropriations = {"trial_court": ["(11025600) COURT FACILITIES CAPITAL NEEDS",

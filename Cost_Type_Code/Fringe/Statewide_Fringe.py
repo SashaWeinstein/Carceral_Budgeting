@@ -2,9 +2,7 @@
 Methodology is that we take health insurance payments through Group Insurance Commission (GIC) and then
 estimation portion of those benefits that go to each agency as % of total payroll that an agency makes up"""
 
-import pandas as pd
-
-from Find_Data import find_data
+from Agency_Classes.Agency_Helpers.Find_Data import find_data
 
 
 def Total_Statewide_Fringe(client):

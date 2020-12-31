@@ -3,7 +3,7 @@
 import pandas as pd
 from sodapy import Socrata
 
-from Find_Data import find_data
+from Agency_Classes.Agency_Helpers.Find_Data import find_data
 
 #Janky to hard-code client here but unsure of correct way to do it. Take another look later on in refactor
 app_token = "2Qa1WiG8G4kj1vGVd2noK7zP0"

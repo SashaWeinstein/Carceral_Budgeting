@@ -16,13 +16,12 @@ resources go to cases that aren't 'criminal.'
 
 import pandas as pd
 import numpy as np
-import os
 import sys
 from sodapy import Socrata
 sys.path.insert(0, "../")
 sys.path.insert(0, "/Users/alexanderweinstein/Documents/Harris/Summer2020/Carceral_Budgeting/Exploratory")
 
-from Find_Data import find_data
+from Agency_Classes.Agency_Helpers.Find_Data import find_data
 carceral_departments = {"trial_court_local": ["Suffolk Superior Court",
                                   "Chelsea District Court", "Suffolk Cty. Juvenile Court",
                                   "South Boston District Court", "South Boston District  Court",

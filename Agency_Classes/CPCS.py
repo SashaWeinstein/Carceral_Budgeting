@@ -3,7 +3,7 @@
 import pandas as pd
 import sys
 from sodapy import Socrata
-from Agency_Classes_Big import StateAgency
+from State_Agency import StateAgency
 cost_type_dir = "/Users/alexanderweinstein/Documents/Harris/Summer2020/Carceral_Budgeting/Exploratory/Cost_Type_Code/"
 
 sys.path.insert(0, "%sCapital_Costs" % cost_type_dir)
@@ -36,7 +36,8 @@ class CPCS(StateAgency):
             self.add_payroll_by_year()
             self.add_fringe()
             self.payroll_by_year += self.R24_by_year #This is dangerous but it's ok for now. After refactor, cthru_payroll_by_year and final_payroll_by_year should be split into two categories
-            self.operating_costs = self.expenditures_by_year.loc["Total Expenditures"]
+            #For refactor: get rid of "operating costs"
+            # self.operating_costs = self.expenditures_by_year.loc["Total Expenditures"]
             # New Aug 24th: split operating costs into payroll, non-payroll
 
             if self.alias in DCP_capital_expenditures.index:

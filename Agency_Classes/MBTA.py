@@ -2,7 +2,7 @@ import pandas as pd
 from MBTA_Payroll_Scraper import scrape_payroll
 
 
-from Agency_Classes_Big import StateAgency
+from State_Agency import StateAgency
 from Pensions_Final import pensions_from_payroll_fraction
 
 class MBTA(StateAgency):
@@ -21,13 +21,15 @@ class MBTA(StateAgency):
     def get_expenditures_by_year(self):
         """MBTA has no non-payroll operating expenditures"""
         self.non_payroll_operating_expenditures_by_year = pd.Series(index=self.year_range, data=0)
+        self.non_hidden_fringe_by_year = pd.Series(index=self.year_range, data=0)
 
     def get_final_costs(self, apply_correction=True, add_hidden_costs=False, pensions_statewide=None):
         """Janky to pass pensions_statewide df but never use it, but I'm up against deadline today """
         if self.payroll_by_year.sum() == 0:
             self.add_payroll_by_year()
 
-        self.payroll_expenditures_by_year = self.operating_costs
+        #For refactor: need to assign this to be zero or something
+        # self.payroll_expenditures_by_year = self.operating_costs
 
         #Following is duplicated code
         self.non_payroll_operating_expenditures_by_year = pd.Series(index=list(range(2016, 2020)), data=0)
