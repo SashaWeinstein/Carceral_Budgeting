@@ -10,6 +10,12 @@ pension coverage plan so better to be to strict on who we count as MTRS).
 """
 
 import pandas as pd
+import sys
+
+helper_dir = "/Users/alexanderweinstein/Documents/Harris/Summer2020/Carceral_Budgeting/Exploratory/Agency_Classes/Agency_Helpers"
+sys.path.insert(0, helper_dir)
+from CY_To_FY import convert_CY_to_FY
+
 
 to_float_cols = ["REGULAR", "RETRO", "OTHER", "OVERTIME",
                  "INJURED", "DETAIL", "QUINN/EDUCATION INCENTIVE", "TOTAL EARNINGS"]
@@ -106,6 +112,7 @@ def PD_Fraction_of_Total(total_earnings, year_col, city, dept_name, earnings_col
     Important note: earnings for Boston are by calendar year and earnings for Chelsea are by fiscal year.
     When police, citywide non-teacher, and citywide are grouped by year they are assigned to something_by_year
     The variables something_by_FY hold the fiscal year data. For Chelsea they are same as original group by
+    For refactor: this should be split in two as it's quite ugly
     """
     yr = list(range(2016,2020))
     PD_total_earnings = total_earnings[total_earnings["department"] == dept_name]
@@ -127,7 +134,8 @@ def PD_Fraction_of_Total(total_earnings, year_col, city, dept_name, earnings_col
         PD_by_FY = pd.Series(index=yr)
         total_no_teachers_by_FY = pd.Series(index=yr)
         total_by_FY = pd.Series(index=yr)
-
+        #For refactor: when I tried to implement CY to FY here it gave different results. don't have time to figure it
+        # out so will work on this later
         for y in yr:
             PD_by_FY.loc[y] = .5 * PD_by_year.loc[y - 1] + .5 * PD_by_year.loc[y]
             total_no_teachers_by_FY = .5 * total_no_teachers_by_year.loc[y - 1] + \

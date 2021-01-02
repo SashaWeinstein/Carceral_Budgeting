@@ -5,9 +5,11 @@ import sys
 from sodapy import Socrata
 from State_Agency import StateAgency
 cost_type_dir = "/Users/alexanderweinstein/Documents/Harris/Summer2020/Carceral_Budgeting/Exploratory/Cost_Type_Code/"
-
 sys.path.insert(0, "%sCapital_Costs" % cost_type_dir)
 
+helper_dir = "/Users/alexanderweinstein/Documents/Harris/Summer2020/Carceral_Budgeting/Exploratory/Agency_Classes/Agency_Helpers"
+sys.path.insert(0, helper_dir)
+from CY_To_FY import convert_CY_to_FY
 
 app_token = "2Qa1WiG8G4kj1vGVd2noK7zP0"
 client = Socrata("cthru.data.socrata.com", app_token)
@@ -63,10 +65,7 @@ class CPCS(StateAgency):
         with public counsel spending"""
         self.add_payroll(total_OT_only)
         payroll_by_calendar_year = self.payroll.groupby("year")[self.pay_col].sum().T
-        payroll_by_FY = pd.Series(index=self.year_range)
-        for y in self.year_range:
-            payroll_by_FY.loc[y] = .5 * payroll_by_calendar_year.loc["pay_total_actual", y - 1] + \
-                                      .5 * payroll_by_calendar_year.loc["pay_total_actual", y]
+        payroll_by_FY = convert_CY_to_FY(payroll_by_calendar_year.loc["pay_total_actual"], self.year_range)
 
         self.payroll_by_year = payroll_by_FY*(1-self.fraction_payroll_federal)
 
