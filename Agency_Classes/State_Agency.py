@@ -26,6 +26,8 @@ helper_dir = "/Users/alexanderweinstein/Documents/Harris/Summer2020/Carceral_Bud
 sys.path.insert(0, helper_dir)
 from SOQL_Constructors import construct_expenditures_SOQL, construct_budget_SOQL, construct_payroll_SOQL, construct_settlements_SOQL
 from Find_Data import find_data
+from CY_To_FY import convert_CY_to_FY
+
 
 app_token = "2Qa1WiG8G4kj1vGVd2noK7zP0"
 client = Socrata("cthru.data.socrata.com", app_token)

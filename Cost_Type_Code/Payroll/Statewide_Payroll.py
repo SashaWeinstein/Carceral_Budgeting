@@ -4,6 +4,9 @@ import pandas as pd
 from sodapy import Socrata
 
 from Agency_Classes.Agency_Helpers.Find_Data import find_data
+from Agency_Classes.Agency_Helpers.CY_To_FY import convert_CY_to_FY
+
+
 
 #Janky to hard-code client here but unsure of correct way to do it. Take another look later on in refactor
 app_token = "2Qa1WiG8G4kj1vGVd2noK7zP0"
@@ -17,10 +20,7 @@ def Total_Statewide_Payroll(client):
     total_payroll.loc[:, "pay_total_actual"] = total_payroll.loc[:, "pay_total_actual"].astype(float)
     total_payroll.loc[:, "year"] = total_payroll.loc[:, "year"].astype(int)
     total_payroll_by_calendar_year = total_payroll.groupby("year").sum()["pay_total_actual"]
-    total_payroll_by_fiscal_year = pd.Series(index=yr)
-    for y in yr:
-        total_payroll_by_fiscal_year.loc[y] = .5 * total_payroll_by_calendar_year.loc[y-1] + \
-                                              .5 * total_payroll_by_calendar_year.loc[y]
+    total_payroll_by_fiscal_year = convert_CY_to_FY(total_payroll_by_calendar_year, yr)
 
     return total_payroll_by_fiscal_year
 
