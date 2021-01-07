@@ -227,12 +227,8 @@ class StateAgency(Agency):
     def add_payroll_by_year(self):
         """Written by Sasha on June 24th to take code from exploratory main"""
         self.add_payroll(False)
-        payroll_by_calendar_year = self.payroll.groupby("year")[self.pay_col].sum().T
-        payroll_by_FY = pd.Series(index = self.year_range)
-        #For refactor: use function to do this correction
-        for y in self.year_range:
-            payroll_by_FY[y] = .5 * payroll_by_calendar_year.loc["pay_total_actual", y - 1] + \
-                                      .5 * payroll_by_calendar_year.loc["pay_total_actual", y]
+        payroll_by_calendar_year = self.payroll.groupby("year")["pay_total_actual"].sum().T
+        payroll_by_FY = convert_CY_to_FY(payroll_by_calendar_year, self.year_range)
         self.payroll_by_year = payroll_by_FY * (1-self.fraction_payroll_federal)
 
     def add_settlements(self):
