@@ -55,7 +55,7 @@ def trial_court_suffolk():
     df.loc["Superior Court Criminal Cases Suffolk", 2016] = 818
     df.loc["Superior Court Criminal Cases Suffolk", 2017] = 747
     df.loc["Superior Court Criminal Cases Suffolk", 2018] = 849
-    df.loc["Superior Court Criminal Cases Suffolk", 2019] = 1451
+    df.loc["Superior Court Criminal Cases Suffolk", 2019] = 849 #Use 2018 number as the report changes in 2019
 
     df.loc["District Court Criminal Defendants Chelsea", 2016] = 4108
     df.loc["District Court Criminal Defendants Chelsea", 2017] = 3383
@@ -70,7 +70,6 @@ def trial_court_suffolk():
     total_criminal_cases = [209791, 197900, 190661, 187817]
 
     suff_fraction = df.sum()/total_criminal_cases
-    suff_fraction.loc[2019] = suff_fraction.loc[2018]
 
     return suff_fraction, df.sum()
 def DOC_correction(df):
