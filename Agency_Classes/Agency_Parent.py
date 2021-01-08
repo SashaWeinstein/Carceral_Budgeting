@@ -3,8 +3,8 @@ import sys
 import os
 
 #For refactor: have to clean this up, don't want to import both places
-from Statewide_Pensions import pensions_by_agency
 sys.path.insert(0, "/Users/alexanderweinstein/Documents/Harris/Summer2020/Carceral_Budgeting/Exploratory/pensions")
+# from Statewide_Pensions import pensions_by_agency
 
 
 exploratory_dir = "/Users/alexanderweinstein/Documents/Harris/Summer2020/Carceral_Budgeting/Exploratory/"
@@ -13,7 +13,7 @@ data_dir_path = "%sdata/" % exploratory_dir
 cost_type_dir = "/Users/alexanderweinstein/Documents/Harris/Summer2020/Carceral_Budgeting/Exploratory/Cost_Type_Code/"
 sys.path.insert(0, "%sPensions" % cost_type_dir)
 
-pensions_statewide, contributions_by_year = pensions_by_agency(False)
+# pensions_statewide, contributions_by_year = pensions_by_agency(False)
 
 
 class Agency():

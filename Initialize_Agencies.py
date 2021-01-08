@@ -2,13 +2,14 @@
 import sys
 sys.path.insert(0, "/Users/alexanderweinstein/Documents/Harris/Summer2020/Carceral_Budgeting/Exploratory/Agency_Classes/")
 
-from Agency_Classes_Big import ReverePD, WinthropPD
 from State_Agency import StateAgency
 from MBTA import MBTA
 from BostonPD import BostonPD
 from sodapy import Socrata
 from CPCS import CPCS
 from ChelseaPD import ChelseaPD
+from ReverePD import ReverePD
+from WinthropPD import WinthropPD
 
 sys.path.insert(0, "/Users/alexanderweinstein/Documents/Harris/Summer2020/Carceral_Budgeting/Exploratory/Agency_Corrections/")
 

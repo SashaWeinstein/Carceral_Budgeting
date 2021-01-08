@@ -12,7 +12,7 @@ from LocalPD_Pensions import ChelseaPD_Pensions
 from LocalPD_Fringe import ChelseaPD_Fringe
 
 
-from Agency_Classes_Big import PoliceDepartment
+from PoliceDept import PoliceDepartment
 
 class ChelseaPD(PoliceDepartment):
     """Created by Sasha on June 25th. As of right now I don't have access to API for Chelsea's open data site

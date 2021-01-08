@@ -58,7 +58,7 @@ def ChelseaPD_Pensions(agency):
     return pension_costs.loc["Final Pension Contribution", agency.year_range] * agency.PD_fraction_non_teacher
 
 
-def ReverePD_Pensions(reverePD_payroll):
+def ReverePD_Pensions(agency):
     """ReverePD_Payroll comes from budget pdfs
     Based on section for Revere public schools, they have their own system of health insurance and pensions so it's correct
     to exclude. "Total" here really means total non-public schools
@@ -112,7 +112,7 @@ def ReverePD_Pensions(reverePD_payroll):
     final_total_payroll[2018] = total_payroll.loc["Total Payroll Request", 2018]
 
     shortened_yr = list(range(2016,2019))
-    reverePD_fraction = reverePD_payroll.loc[shortened_yr]/final_total_payroll.loc[shortened_yr]
+    reverePD_fraction = agency.payroll_by_year.loc[shortened_yr]/final_total_payroll.loc[shortened_yr]
     reverePD_fraction.loc[2019] = reverePD_fraction.loc[2018]
 
     pension_final = pension_contributions.loc["Pension Expenditure", list(range(2016,2020))]

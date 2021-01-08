@@ -103,7 +103,7 @@ def ReverePD_Fringe(PD_fraction):
 
     citywide_fringe.loc["Total"] = citywide_fringe.sum()
 
-    return citywide_fringe.loc["Total"] * PD_fraction, pd.Series(index=year_range, data=0)
+    return citywide_fringe.loc["Total"] * PD_fraction
 
 def No_Fringe_Benefits(PD_fraction):
     """Called by Chelsea, can add fringe benefits later"""

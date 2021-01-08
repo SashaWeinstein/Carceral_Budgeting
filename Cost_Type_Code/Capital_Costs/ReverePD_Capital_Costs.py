@@ -5,7 +5,7 @@
 
 import pandas as pd
 
-def get_ReverePD_Capital_Costs():
+def ReverePD_Capital_Costs():
     df = pd.DataFrame(columns=list(range(2016,2020)),
                       index=["ReverePD Projects", "Public Safety Projects"])
 
