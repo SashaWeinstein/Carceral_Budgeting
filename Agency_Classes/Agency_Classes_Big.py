@@ -112,39 +112,6 @@ class PoliceDepartment(Agency):
                 self.capital_expenditures_by_year.to_json(
                     saved_scraped_path + self.alias + "_capital_expenditures.json")
 
-    def Add_True_Earnings(self):
-        """New July 30th. Replace expenditure numbers 2016-2019 with true earnings
-        Note that for 2016 for chelsea we don't have actual payroll so I will use rough estimation, need better
-         way to fix later"""
-        total_earnings, PD_fraction_non_teacher, PD_fraction_total, PD_payroll = True_Earnings(self.alias)
-
-        if 2016 not in PD_fraction_non_teacher.index:
-            PD_fraction_non_teacher[2016] = PD_fraction_non_teacher[2017] - \
-                                            (PD_fraction_non_teacher[2018] - PD_fraction_non_teacher[2017])
-
-        self.pensions = self.add_pension_costs(PD_fraction_non_teacher)
-        self.fringe, fringe_PD_budget = self.add_fringe_benefits(PD_fraction_total)
-        self.payroll = PD_payroll
-
-        if self.alias == "Chelsea PD":
-            self.payroll_by_year = total_earnings
-        self.payroll_expenditures_by_year = self.budget_summary.loc[
-            "Payroll Expenditures", list(range(2016, 2020))]  # Need to fix year range
-        if self.alias == "Chelsea PD":
-            self.payroll_by_year[2016] = self.budget_summary.loc["Payroll Expenditures", 2016]
-            self.payroll_expenditures_by_year[2016] = self.budget_summary.loc["Payroll Expenditures", 2016]
-        #Break this into two in refactor
-        if self.alias == "Boston PD":
-            self.non_payroll_operating_expenditures_by_year = self.budget_summary.loc["Total Expenditures"] - \
-                                                          self.budget_summary.loc["Payroll Expenditures"] - fringe_PD_budget
-        if self.alias == "Chelsea PD":
-            self.non_payroll_operating_expenditures_by_year = self.budget_summary.loc["Non-Payroll Expenditures"]
-
-        self.non_payroll_operating_expenditures_by_year = \
-            self.non_payroll_operating_expenditures_by_year.loc[list(range(2016, 2020))]
-        self.operating_costs = self.payroll_by_year + self.non_payroll_operating_expenditures_by_year
-
-        self.capital_expenditures_by_year = self.capital_expenditures_by_year.loc[list(range(2016,2020))]
 
 
 
@@ -153,47 +120,6 @@ class PoliceDepartment(Agency):
 
         return self.non_payroll_operating_expenditures_by_year + self.payroll_by_year + self.pensions + self.fringe + self.capital_expenditures_by_year
 
-class ChelseaPD(PoliceDepartment):
-    """Created by Sasha on June 25th. As of right now I don't have access to API for Chelsea's open data site
-    here https://chelseama.finance.socrata.com/#!/view-data so instead I'm manually downloading csv's
-    New July 6th: take out 'appropriations column' and replace with 'proposed budget column' which
-    will only be populated with 2021 data
-    Note that there is additional debt service for chelsea but I can't figure out what projects that debt service is
-    from"""
-
-    def __init__(self):
-        year_range = list(range(2016, 2021))
-        PoliceDepartment.__init__(self, "Chelsea PD", "Chelsea PD", year_range)
-        self.dept_title = "Police Department Program Budget"
-        self.add_pension_costs = ChelseaPD_Pensions
-        self.add_fringe_benefits = ChelseaPD_Fringe
-        self.budget_summary = pd.DataFrame(columns=self.year_range, index=["Payroll Expenditures",
-                                                                           "Non-Payroll Expenditures"
-                                                                           "Total Expenditures"])
-        self.get_budget_summary()
-        self.Add_True_Earnings()
-        self.get_final_costs()
-
-
-    def get_budget_summary(self):
-        """Created Thursday Dec 24th"""
-        #From FY20 Document
-        self.budget_summary.loc["Payroll Expenditures", 2016 ] = 9685922
-        self.budget_summary.loc["Non-Payroll Expenditures", 2016 ] = 1050166
-        self.capital_expenditures_by_year.loc[2016] =173000
-
-        #From FY21 Documeent
-        self.budget_summary.loc["Payroll Expenditures" , 2017 ] = 9551598
-        self.budget_summary.loc["Non-Payroll Expenditures" , 2017 ] = 701295.76
-        self.capital_expenditures_by_year.loc[2017] = 164000
-
-        self.budget_summary.loc["Payroll Expenditures" , 2018 ] = 9923457.54
-        self.budget_summary.loc["Non-Payroll Expenditures" , 2018 ] = 710475.69
-        self.capital_expenditures_by_year.loc[2018] = 161438.91
-
-        self.budget_summary.loc["Payroll Expenditures" , 2019 ] = 11526261.80
-        self.budget_summary.loc["Non-Payroll Expenditures" , 2019 ] = 639385.29
-        self.capital_expenditures_by_year.loc[2019] = 0
 
 
 class ReverePD(PoliceDepartment):

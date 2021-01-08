@@ -18,6 +18,10 @@ from Pensions_Final import pensions_from_payouts_fraction
 from Statewide_Payroll import Fraction_Statewide_Payroll
 from DCP_Capital import get_capital_expenditures
 from Statewide_Fringe import Total_Statewide_Fringe
+
+agency_corrections_dir = "/Users/alexanderweinstein/Documents/Harris/Summer2020/Carceral_Budgeting" \
+                         "/Exploratory/Agency_Corrections/"
+sys.path.insert(0, agency_corrections_dir)
 from Agency_Corrections import trial_court_pcnt_criminal
 
 

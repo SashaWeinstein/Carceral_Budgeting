@@ -112,7 +112,6 @@ def PD_Fraction_of_Total(total_earnings, year_col, city, dept_name, earnings_col
     Important note: earnings for Boston are by calendar year and earnings for Chelsea are by fiscal year.
     When police, citywide non-teacher, and citywide are grouped by year they are assigned to something_by_year
     The variables something_by_FY hold the fiscal year data. For Chelsea they are same as original group by
-    For refactor: this should be split in two as it's quite ugly
     """
     yr = list(range(2016,2020))
     PD_total_earnings = total_earnings[total_earnings["department"] == dept_name]
@@ -120,7 +119,6 @@ def PD_Fraction_of_Total(total_earnings, year_col, city, dept_name, earnings_col
     total_by_year = total_earnings.groupby(year_col).sum()[earnings_col]
     no_teachers, _ = remove_schools(total_earnings, city, title_col)
     total_no_teachers_by_year = no_teachers.groupby(year_col).sum()[earnings_col]
-
     # Need to fix this during refactor to not be ugly
     if city == "Chelsea":
         # 2016 data is assumed to be 2017 minus difference between 2018 and 2017
@@ -131,19 +129,24 @@ def PD_Fraction_of_Total(total_earnings, year_col, city, dept_name, earnings_col
         return PD_by_year, PD_by_year / total_no_teachers_by_year, PD_by_year / total_by_year, PD_total_earnings
     elif city=="Boston":
         # Following code should be extracted to function that averages calendar years
-        PD_by_FY = pd.Series(index=yr)
-        total_no_teachers_by_FY = pd.Series(index=yr)
-        total_by_FY = pd.Series(index=yr)
-        #For refactor: when I tried to implement CY to FY here it gave different results. don't have time to figure it
-        # out so will work on this later
-        for y in yr:
-            PD_by_FY.loc[y] = .5 * PD_by_year.loc[y - 1] + .5 * PD_by_year.loc[y]
-            total_no_teachers_by_FY = .5 * total_no_teachers_by_year.loc[y - 1] + \
-                                        .5 * total_no_teachers_by_year[y]
-            total_by_FY = .5 * total_by_year[y - 1] + .5 * total_by_year[y]
-        return PD_by_FY, PD_by_FY / total_no_teachers_by_FY, PD_by_FY / total_by_FY, PD_total_earnings
+        return BostonPD_by_FY(PD_by_year, PD_total_earnings, total_by_year, total_no_teachers_by_year, yr)
 
 
+def BostonPD_by_FY(PD_by_CY, PD_total_earnings, citywide_payroll_by_CY, citywide_noMTRS_payroll_by_CY, yr):
+    """Series passed are by calendar year. Convert to fiscal year and then return:
+     police pay by FY,
+     fraction of citywide payroll to cops by FY,
+     fraction of non-MTRS payroll to cops by FY,
+     df of raw police earnings
+     """
+    PD_by_FY = convert_CY_to_FY(PD_by_CY, yr)
+    total_no_teachers_by_FY = convert_CY_to_FY(citywide_noMTRS_payroll_by_CY, yr)
+    total_by_FY = convert_CY_to_FY(citywide_payroll_by_CY, yr)
+
+    PD_fraction_noMTRS_by_FY = PD_by_FY / total_no_teachers_by_FY
+    PD_fraction_by_FY = PD_by_FY / total_by_FY
+
+    return PD_by_FY, PD_fraction_noMTRS_by_FY, PD_fraction_by_FY, PD_total_earnings
 def get_numeric(x):
     if isinstance(x, float) or isinstance(x, int):
         return x

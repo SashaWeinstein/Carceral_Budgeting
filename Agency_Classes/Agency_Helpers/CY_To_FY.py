@@ -9,3 +9,10 @@ def convert_CY_to_FY(CY, yr):
     for y in yr:
         FY.loc[y] = np.mean([CY.loc[y-1], CY.loc[y]])
     return FY
+
+def convert_CY_to_FY_df(cy_df, yr):
+    """Special function for dataframe conversion"""
+    FY = pd.DataFrame(columns=yr, index= cy_df.index )
+    for y in yr:
+        FY.loc[:, y] = cy_df.loc[:, y-1:y].mean(axis=1)
+    return FY

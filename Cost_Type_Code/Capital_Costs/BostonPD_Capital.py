@@ -1,7 +1,7 @@
 """Created on Dec 29th to replace scraper"""
 import pandas as pd
 
-def get_BostonPD_Capital_Costs(agency):
+def get_BostonPD_Capital_Costs():
 
     #To do for refactor: get yr from agency
     yr = list(range(2016,2020))

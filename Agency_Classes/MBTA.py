@@ -1,4 +1,12 @@
+import sys
 import pandas as pd
+cost_type_dir = "/Users/alexanderweinstein/Documents/Harris/Summer2020/Carceral_Budgeting/Exploratory/Cost_Type_Code/"
+sys.path.insert(0, "%sPayroll" % cost_type_dir)
+agency_helper_dir = "/Users/alexanderweinstein/Documents/Harris/Summer2020/Carceral_Budgeting/Exploratory" \
+                    "/Agency_Classes/Agency_Helpers"
+sys.path.insert(0, agency_helper_dir)
+
+from CY_To_FY import convert_CY_to_FY
 from MBTA_Payroll_Scraper import scrape_payroll
 
 
@@ -49,12 +57,10 @@ class MBTA(StateAgency):
         for y in [2015, 2017]:
             self.payroll_by_calendar_year.loc["pay_total_actual", y] = scraped[y]["total_pay_actual"]
             self.payroll_by_calendar_year.loc["police_pay", y] = scraped[y]["police_pay"]
+
+        self.payroll_by_year = convert_CY_to_FY(self.payroll_by_calendar_year.loc["police_pay"], self.year_range[2:])
         self.payroll_by_year[2016] = self.payroll_by_calendar_year.loc["police_pay", 2015]  # Missing data for 2016
         self.payroll_by_year[2017] = self.payroll_by_calendar_year.loc["police_pay", 2017]
-
-        for y in self.year_range[2:]:
-            self.payroll_by_year.loc[y] = .5 * self.payroll_by_calendar_year.loc["police_pay", y - 1] + \
-                                          .5 * self.payroll_by_calendar_year.loc["police_pay", y]
 
     def get_police_pay(self, row):
         position = row["position_title"].lower()

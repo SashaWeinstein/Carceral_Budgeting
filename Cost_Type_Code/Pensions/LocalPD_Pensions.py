@@ -32,7 +32,7 @@ def BostonPD_Pensions(agency):
     return pension_contributions.loc["Pension Expenditure", 2016:2019] * PD_fraction
 
 
-def ChelseaPD_Pensions(PD_fraction):
+def ChelseaPD_Pensions(agency):
     """PD_fraction is from true earnings module, has fraction of non-teacher payroll that goes to cops each year"""
     pension_costs = pd.DataFrame(columns=list(range(2016, 2021)),
                                  index=["Chelsea Pension Contribution Budget",
@@ -55,7 +55,7 @@ def ChelseaPD_Pensions(PD_fraction):
     pension_costs.loc["Final Pension Contribution",
                       [2017, 2018, 2019]] = pension_costs.loc["Chelsea Pension Contribution Expenditure",
                                                               [2017, 2018, 2019]]
-    return pension_costs.loc["Final Pension Contribution", list(range(2016,2020))] * PD_fraction
+    return pension_costs.loc["Final Pension Contribution", agency.year_range] * agency.PD_fraction_non_teacher
 
 
 def ReverePD_Pensions(reverePD_payroll):

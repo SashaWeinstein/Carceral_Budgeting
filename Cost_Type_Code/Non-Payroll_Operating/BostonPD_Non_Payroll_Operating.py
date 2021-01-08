@@ -9,7 +9,7 @@ def get_BostonPD_Non_Payroll_Operating(agency):
     refers to expenditures that are non-external.
     """
     #Have to do yr stupid way as boston still has dumb year range attr. Replace with agency.year_range once it's fixed
-    yr = list(range(2016,2020))
+    yr = agency.year_range
     out_df = pd.DataFrame(index=["Total Operating Expend",
                                  "Payroll Expend",
                                  "Fringe Expend",

@@ -42,7 +42,7 @@ def BostonPD_Fringe(agency):
 
     return citywide_fringe.loc["Total", 2016:2019] * PD_fraction #+ PD_fringe.loc["Worker's Comp Medical", :]#, PD_fringe.loc["Worker's Comp Medical", :]
 
-def ChelseaPD_Fringe(PD_fraction):
+def ChelseaPD_Fringe(agency):
     """For Chelsea Use Health Insurance, worker's Comp"""
     year_range = list(range(2016,2020))
     citywide_fringe = pd.DataFrame(columns=year_range,
@@ -65,7 +65,7 @@ def ChelseaPD_Fringe(PD_fraction):
 
     citywide_fringe.loc["Total"] = citywide_fringe.sum()
 
-    return citywide_fringe.loc["Total"]*PD_fraction, pd.Series(index=year_range, data=0)
+    return citywide_fringe.loc["Total"]*agency.PD_fraction_total
 
 def ReverePD_Fringe(PD_fraction):
     """There is line-item for worker's comp, health insurance under 900-unclassified section of budget

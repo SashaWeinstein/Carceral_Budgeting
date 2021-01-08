@@ -25,6 +25,7 @@ sys.path.insert(0, "../")
 sys.path.insert(0, "/Users/alexanderweinstein/Documents/Harris/Summer2020/Carceral_Budgeting/Exploratory")
 
 from Agency_Classes.Agency_Helpers.Find_Data import find_data
+from Agency_Classes.Agency_Helpers.CY_To_FY import convert_CY_to_FY_df
 carceral_departments = {"trial_court_local": ["Suffolk Superior Court",
                                   "Chelsea District Court", "Suffolk Cty. Juvenile Court",
                                   "South Boston District Court", "South Boston District  Court",
@@ -73,23 +74,23 @@ def get_cthru_pension_payouts(requery):
 
 def as_pcnt_of_total(cthru_pension_payouts, requery):
 
+    yr = list(range(2016,2020))
     payouts_gb = cthru_pension_payouts.groupby(["agency_class", "year"]).agg({"annual_amount": "sum"}).unstack()
     payouts_gb.columns = [x[1] for x in payouts_gb.columns]
     payouts_gb.loc["DOC",:] = DOC_pensions(requery)
 
-    payout_pct = pd.DataFrame(index=payouts_gb.index, columns=payouts_gb.columns)
     total_by_year = cthru_pension_payouts.groupby("year").sum()["annual_amount"]
 
-    for y in list(range(2016,2020)):
-        payout_pct.loc[:, y] = .5*(payouts_gb[y-1]/total_by_year[y-1]) + .5*(payouts_gb[y]/total_by_year[y])
+    payout_pct_calendar_year = payouts_gb/total_by_year
+    payout_pct_FY = convert_CY_to_FY_df(payout_pct_calendar_year, yr)
 
-    return payout_pct
+    return payout_pct_FY
 
 def pension_payments_statewide(payouts_fraction, contributions_by_year):
     """Takes fraction pf payout money to each entity (can be agency or umbrella dept right now) and caculates sum
     of total pension contributions"""
     pension_costs_statewide_calculated = pd.DataFrame(index=payouts_fraction.index, columns=payouts_fraction.columns)
-    for year in contributions_by_year.index:
+    for year in list(range(2016,2020)):
         pension_costs_statewide_calculated[year] = payouts_fraction[year] * contributions_by_year[year]
     sheriff_extra(pension_costs_statewide_calculated)
     return pension_costs_statewide_calculated
