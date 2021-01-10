@@ -83,32 +83,20 @@ class StateAgency(Agency):
         self.final_costs_calculated = False
         self.get_final_costs()
 
+    #Important refactor: change this function which I hate so bad
     def get_final_costs(self, apply_correction=True):
         """This is a stupid function right now. The only reason to have a special 'get final costs' function right
         now is that the trial court uses a more complex agency correction. So maybe this should be replaced with a
         'apply correction' function that applies correction, which we call instead of the 'agency_correction' when
         results are produced. """
-        if not self.final_costs_calculated:
-            self.final_costs_calculated = True
 
+        #During refactor move this somewhere
+        if self.alias =="trial_court":
+            pcnt_criminal_correction = trial_court_pcnt_criminal()
 
-
-
-
-            #Should delete following line
-            # self.operating_costs = self.expenditures_by_year.loc["Total Expenditures"]
-
-            # New Aug 24th: split operating costs into payroll, non-payroll
-
-
-        # Everything below is out of date and doesn't make sense right now.
-            #During refactor move this somewhere
-            if self.alias =="trial_court":
-                pcnt_criminal_correction = trial_court_pcnt_criminal()
-
-            self.final_cost = self.payroll_by_year + self.non_payroll_operating_expenditures_by_year + \
-                              self.pensions + self.fringe + \
-                              self.capital_expenditures_by_year
+        self.final_cost = self.payroll_by_year + self.non_payroll_operating_expenditures_by_year + \
+                          self.pensions + self.fringe + \
+                          self.capital_expenditures_by_year
 
         if apply_correction:
             if self.alias == "trial_court":
@@ -138,14 +126,9 @@ class StateAgency(Agency):
 
         self.remove_capital_expenditures()
         self.remove_fringe_expenditures()
-        #Don't like this it's janky but it's real important I get correct results
-        if self.remove_R24:
-            self.remove_R24_expenditures()
 
-    def remove_R24_expenditures(self):
-        self.R24 = self.expenditures[(self.expenditures["object_code"] == "(R24) PUBLIC COUNSEL") &
-                                     (self.expenditures["vendor"].str.contains("(?i)payroll") == False)]
-        self.expenditures = self.expenditures[self.expenditures["object_code"] != "(R24) PUBLIC COUNSEL"]
+        if self.remove_R24:
+            self.remove_R24_expenditures() #This is called for CPCS
 
     def remove_fringe_expenditures(self):
         non_hidden_fringe = self.expenditures[

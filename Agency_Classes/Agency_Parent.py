@@ -1,20 +1,4 @@
 import pandas as pd
-import sys
-import os
-
-#For refactor: have to clean this up, don't want to import both places
-sys.path.insert(0, "/Users/alexanderweinstein/Documents/Harris/Summer2020/Carceral_Budgeting/Exploratory/pensions")
-# from Statewide_Pensions import pensions_by_agency
-
-
-exploratory_dir = "/Users/alexanderweinstein/Documents/Harris/Summer2020/Carceral_Budgeting/Exploratory/"
-data_dir_path = "%sdata/" % exploratory_dir
-
-cost_type_dir = "/Users/alexanderweinstein/Documents/Harris/Summer2020/Carceral_Budgeting/Exploratory/Cost_Type_Code/"
-sys.path.insert(0, "%sPensions" % cost_type_dir)
-
-# pensions_statewide, contributions_by_year = pensions_by_agency(False)
-
 
 class Agency():
     """For keeping track of info associated with a government agency
@@ -57,16 +41,6 @@ class Agency():
     def API_call(self, client, dataset, SOQL_constructor):
         """Moved from StateAgency to Parent Agency class on July 2nd"""
         return client.get(dataset, where=SOQL_constructor(), limit=999999)
-
-    def clean_labels(self, df):
-        """Written by Sasha on June 22nd to clean row labels so they look nice
-        To do: send all word to uppercase except acronyms"""
-        df.index = [i.replace("_", " ") for i in df.index]
-
-    def to_float(self):
-        """Written July 8th"""
-        self.budget_summary = self.budget_summary.applymap(lambda x: float(x.replace(",", "")) if type(x) == str else x)
-        self.budget_summary.fillna(0, inplace=True)
 
     def __repr__(self):
         return "Agency object for " + self.alias
