@@ -8,14 +8,14 @@ sys.path.insert(0, "%sPensions" % cost_type_dir)
 
 from LocalPD_Pensions import WinthropPD_Pensions_Benefits
 
-from PoliceDept import PoliceDepartment
+from Agency_Parent import Agency
 
-class WinthropPD(PoliceDepartment):
+class WinthropPD(Agency):
     """Last Updated by Sasha July 30th to pass ReverePD object"""
 
-    def __init__(self, ReverePD_fraction):
-        year_range = list(range(2016, 2020))
-        PoliceDepartment.__init__(self, "Winthrop PD", "Winthrop PD", year_range)
+    def __init__(self, yr, ReverePD_fraction):
+        Agency.__init__(self, alias="Winthrop PD", official_name="Winthrop PD", year_range=yr,
+                        correction_function=lambda x:x, category="Police")
 
         self.budget_summary = pd.DataFrame(columns=self.year_range, index=["Payroll Expenses",
                                                                            "Capital Expenses",

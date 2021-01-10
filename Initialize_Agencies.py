@@ -101,9 +101,9 @@ def get_agencies(yr):
                                             correction_function=appeals_court_correction)
 
     out_dict["Boston PD"] = BostonPD(yr)
-    out_dict["Chelsea PD"] = ChelseaPD()
-    out_dict["Revere PD"] = ReverePD()
+    out_dict["Chelsea PD"] = ChelseaPD(yr)
+    out_dict["Revere PD"] = ReverePD(yr)
 
-    out_dict["Winthrop PD"] = WinthropPD(out_dict["Revere PD"].PD_fraction)
+    out_dict["Winthrop PD"] = WinthropPD(yr, out_dict["Revere PD"].PD_fraction)
 
     return out_dict

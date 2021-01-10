@@ -3,7 +3,7 @@ Boston PD class was given it's own file Dec 29
 """
 import pandas as pd
 
-from PoliceDept import PoliceDepartment
+from Agency_Parent import Agency
 
 from LocalPD_External_Funds import BostonPD_External_Funds
 from BostonPD_Non_Payroll_Operating import get_BostonPD_Non_Payroll_Operating
@@ -13,11 +13,11 @@ from LocalPD_Fringe import BostonPD_Fringe
 from LocalPD_True_Payroll import True_Earnings
 
 
-class BostonPD(PoliceDepartment):
+class BostonPD(Agency):
     """"""
 
     def __init__(self, yr):
-        PoliceDepartment.__init__(self, "Boston PD", "Boston PD", yr)
+        Agency.__init__(self, alias="Boston PD", official_name="Boston PD", year_range=yr, correction_function=lambda x:x, category="Police")
         self.federal_expenditures_by_year = BostonPD_External_Funds()  # New August 14th
 
         self.non_payroll_operating_expenditures_by_year, self.fraction_all_federal, self.non_hidden_fringe = \
@@ -25,7 +25,7 @@ class BostonPD(PoliceDepartment):
         self.add_true_earnings()
         self.pensions = BostonPD_Pensions(self)
         self.fringe = BostonPD_Fringe(self) + self.non_hidden_fringe
-        self.capital_expenditures_by_year = get_BostonPD_Capital_Costs()
+        self.capital_expenditures_by_year = get_BostonPD_Capital_Costs(self.year_range)
 
 
     def add_true_earnings(self):

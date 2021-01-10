@@ -1,14 +1,11 @@
 """Total statewide payroll is used for state-level agency fringe benefits calculation and some state-level pension"""
 
-import pandas as pd
 from sodapy import Socrata
 
 from Agency_Classes.Agency_Helpers.Find_Data import find_data
 from Agency_Classes.Agency_Helpers.CY_To_FY import convert_CY_to_FY
 
-
-
-#Janky to hard-code client here but unsure of correct way to do it. Take another look later on in refactor
+#Possible refactor: pass client in from initialize agencies
 app_token = "2Qa1WiG8G4kj1vGVd2noK7zP0"
 client = Socrata("cthru.data.socrata.com", app_token)
 client.timeout = 40

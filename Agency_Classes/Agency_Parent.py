@@ -47,9 +47,8 @@ class Agency():
         self.fringe = pd.Series(index=self.year_range, data=0)
         self.federal_expenditures_by_year = pd.Series(index=list(range(2016, 2020)),
                                                       data=0)  # needs fix: have to use range here cause some police year ranges aren't 2016-2020. Have to fix that then can use self.year_range
-        self.final_cost = pd.Series(
-            index=list(range(2016, 2020)))  # Not fully implemented yet, just works for state agencies
-        self.capital_expenditures = None  # New August 19th
+
+        self.capital_expenditures_by_year = pd.Series(index=year_range, data=0)
         assert category in ["Legal", "Jails", "Police",
                             "Other"], "Category for" + self.alias + "not an existing category"
 

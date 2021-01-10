@@ -12,9 +12,9 @@ from LocalPD_Pensions import ChelseaPD_Pensions
 from LocalPD_Fringe import ChelseaPD_Fringe
 
 
-from PoliceDept import PoliceDepartment
+from Agency_Parent import Agency
 
-class ChelseaPD(PoliceDepartment):
+class ChelseaPD(Agency):
     """Created by Sasha on June 25th. As of right now I don't have access to API for Chelsea's open data site
     here https://chelseama.finance.socrata.com/#!/view-data so instead I'm manually downloading csv's
     New July 6th: take out 'appropriations column' and replace with 'proposed budget column' which
@@ -22,9 +22,9 @@ class ChelseaPD(PoliceDepartment):
     Note that there is additional debt service for chelsea but I can't figure out what projects that debt service is
     from"""
 
-    def __init__(self):
-        year_range = list(range(2016, 2020))
-        PoliceDepartment.__init__(self, "Chelsea PD", "Chelsea PD", year_range)
+    def __init__(self, yr):
+        Agency.__init__(self, alias="Chelsea PD", official_name="Chelsea PD", year_range=yr,
+                        correction_function=lambda x:x, category="Police")
         self.dept_title = "Police Department Program Budget"
         self.budget_summary = pd.DataFrame(columns=self.year_range, index=["Payroll Expenditures",
                                                                            "Non-Payroll Expenditures",
@@ -33,7 +33,6 @@ class ChelseaPD(PoliceDepartment):
         self.add_true_earnings()
         self.pensions = ChelseaPD_Pensions(self)
         self.fringe = ChelseaPD_Fringe(self)
-        self.get_final_costs()
 
 
     def get_budget_summary(self):

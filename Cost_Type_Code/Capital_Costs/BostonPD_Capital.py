@@ -1,10 +1,8 @@
 """Created on Dec 29th to replace scraper"""
 import pandas as pd
 
-def get_BostonPD_Capital_Costs():
+def get_BostonPD_Capital_Costs(yr):
 
-    #To do for refactor: get yr from agency
-    yr = list(range(2016,2020))
     capital_costs_by_year = pd.Series(index=yr)
 
     #From FY19 Document

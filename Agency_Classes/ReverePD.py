@@ -10,9 +10,9 @@ from LocalPD_Pensions import  ReverePD_Pensions
 from LocalPD_Fringe import ReverePD_Fringe
 from ReverePD_Capital_Costs import ReverePD_Capital_Costs
 
-from PoliceDept import PoliceDepartment
+from Agency_Parent import Agency
 
-class ReverePD(PoliceDepartment):
+class ReverePD(Agency):
     """Created by Sasha June 25th
     Revere has no API, so this code will iterate over pdfs I manually downloaded from Revere's site
     To do: summarize 2016 budget, get $ spend on weapons and weapons related expenses
@@ -21,9 +21,9 @@ class ReverePD(PoliceDepartment):
     possible we could get some useful info out of it.
     For Revere PD, there is a big capital expenditure for line-item 'public safety.''"""
 
-    def __init__(self):
-        year_range = list(range(2016, 2020))
-        PoliceDepartment.__init__(self, "Revere PD", "Revere PD", year_range)
+    def __init__(self, yr):
+        Agency.__init__(self, alias="Revere PD", official_name="Revere PD", year_range=yr,
+                        correction_function=lambda x:x, category="Police")
         self.budget_summary = pd.DataFrame(columns=self.year_range, index=["Payroll Recommended",
                                                                            "Total Recommended",
                                                                            "Payroll Adopted",
