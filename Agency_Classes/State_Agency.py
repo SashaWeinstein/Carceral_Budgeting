@@ -19,23 +19,19 @@ from Statewide_Payroll import Fraction_Statewide_Payroll
 from DCP_Capital import get_DCP_capital
 from Statewide_Fringe import get_statewide_fringe
 
-agency_corrections_dir = "/Users/alexanderweinstein/Documents/Harris/Summer2020/Carceral_Budgeting" \
-                         "/Exploratory/Agency_Corrections/"
-sys.path.insert(0, agency_corrections_dir)
-from Agency_Corrections import trial_court_pcnt_criminal
-
 
 
 helper_dir = "/Users/alexanderweinstein/Documents/Harris/Summer2020/Carceral_Budgeting/Exploratory/Agency_Classes/Agency_Helpers"
 sys.path.insert(0, helper_dir)
-from SOQL_Constructors import construct_expenditures_SOQL, construct_budget_SOQL, construct_payroll_SOQL, construct_settlements_SOQL
+from SOQL_Constructors import construct_expenditures_SOQL, construct_budget_SOQL, construct_payroll_SOQL, \
+    construct_settlements_SOQL
 from Find_Data import find_data
 from CY_To_FY import convert_CY_to_FY
-
 
 app_token = "2Qa1WiG8G4kj1vGVd2noK7zP0"
 client = Socrata("cthru.data.socrata.com", app_token)
 client.timeout = 40
+
 
 class StateAgency(Agency):
     """Last updated July 10th to get revenue data into it's own dataframe
@@ -76,30 +72,12 @@ class StateAgency(Agency):
         self.pensions, self.local_pensions = pension_function(self)
         self.add_fringe()
         self.capital_expenditures_by_year += get_DCP_capital(self)
-        self.final_costs_calculated = False
-        self.get_final_costs()
 
-    #Important refactor: change this function which I hate so bad
-    def get_final_costs(self, apply_correction=True):
-        """This is a stupid function right now. The only reason to have a special 'get final costs' function right
-        now is that the trial court uses a more complex agency correction. So maybe this should be replaced with a
-        'apply correction' function that applies correction, which we call instead of the 'agency_correction' when
-        results are produced. """
 
-        #During refactor move this somewhere
-        if self.alias =="trial_court":
-            pcnt_criminal_correction = trial_court_pcnt_criminal()
 
-        self.final_cost = self.payroll_by_year + self.non_payroll_operating_expenditures_by_year + \
-                          self.pensions + self.fringe + \
-                          self.capital_expenditures_by_year
-
-        if apply_correction:
-            if self.alias == "trial_court":
-                return self.correction_function(self.final_cost) + self.local_pensions*pcnt_criminal_correction  #Janky but should work
-            return self.correction_function(self.final_cost)
-        else:
-            return self.final_cost
+    def pension_correction(self, apply_correction, correction):
+        """Apply correction is used in TRC version"""
+        return correction(self.pensions)
 
     def add_expenditures(self):
         """Adds expenditures for agency over the given year range
@@ -109,18 +87,19 @@ class StateAgency(Agency):
         Do to: pull out spending on fringe benefits and put that in benefit series
         """
         file_name = self.alias + "_expenditures.csv"
-        self.expenditures = find_data(self.requery, self.client,  "pegc-naaa", construct_expenditures_SOQL(self),
+        self.expenditures = find_data(self.requery, self.client, "pegc-naaa", construct_expenditures_SOQL(self),
                                       file_name)
 
         self.clean_expenditures()
         self.remove_federal()
-        self.expenditures = self.expenditures[self.expenditures["appropriation_type"].str.contains("INTRAGOVERNMENTAL") == False]
+        self.expenditures = self.expenditures[
+            self.expenditures["appropriation_type"].str.contains("INTRAGOVERNMENTAL") == False]
 
         self.remove_capital_expenditures()
         self.remove_fringe_expenditures()
 
         if self.remove_R24:
-            self.remove_R24_expenditures() #This is called for CPCS
+            self.remove_R24_expenditures()  # This is called for CPCS
 
     def remove_fringe_expenditures(self):
         non_hidden_fringe = self.expenditures[
@@ -148,7 +127,7 @@ class StateAgency(Agency):
 
         self.find_fraction_payroll_expend_federal()
         self.find_federal_expenditures_by_year()
-        self.expenditures = self.expenditures[self.expenditures["appropriation_type"].str.contains("FEDERAL")==False]
+        self.expenditures = self.expenditures[self.expenditures["appropriation_type"].str.contains("FEDERAL") == False]
 
     def find_federal_expenditures_by_year(self):
         """This number is used for footnotes """
@@ -170,7 +149,6 @@ class StateAgency(Agency):
                                             .groupby("budget_fiscal_year")["amount"].sum()
         self.fraction_payroll_federal = self.fraction_payroll_federal.loc[self.year_range].fillna(0)
 
-
     def get_expenditures_by_year(self):
         """This could be clearer I think"""
         self.add_expenditures()
@@ -184,7 +162,6 @@ class StateAgency(Agency):
         self.non_payroll_operating_expenditures_by_year = non_payroll_expenditures. \
             groupby("budget_fiscal_year").sum()["amount"].loc[self.year_range]
 
-
     def add_payroll(self, total_OT_only=False):
         """Created by Sasha on June 22nd to get payroll data from cthru endpoint
         Dataset is here https://cthru.data.socrata.com/dataset/Commonwealth-Of-Massachusetts-Payrollv2/rxhc-k6iz
@@ -194,7 +171,7 @@ class StateAgency(Agency):
         """
         file_name = self.alias + "_payroll.csv"
         self.payroll = find_data(self.requery, self.client, "rxhc-k6iz", construct_payroll_SOQL(self),
-                                      file_name)
+                                 file_name)
         assert not self.payroll.empty, "no payroll info found for " + self.alias
         if total_OT_only:
             self.pay_col = ["pay_total_actual", "pay_overtime_actual"]
@@ -208,7 +185,7 @@ class StateAgency(Agency):
         self.add_payroll(False)
         payroll_by_calendar_year = self.payroll.groupby("year")["pay_total_actual"].sum().T
         payroll_by_FY = convert_CY_to_FY(payroll_by_calendar_year, self.year_range)
-        self.payroll_by_year = payroll_by_FY * (1-self.fraction_payroll_federal)
+        self.payroll_by_year = payroll_by_FY * (1 - self.fraction_payroll_federal)
 
     def add_fringe(self):
         """Combines fringe from expenditure record with fringe from statewide benefits"""

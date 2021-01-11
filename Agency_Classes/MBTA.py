@@ -22,26 +22,26 @@ class MBTA(StateAgency):
                              payroll_vendors=[],
                              payroll_official_name='Massachusetts Bay Transportation Authority (MBT)',
                              client=client, correction_function=correction_function, pension_function=pensions_from_payroll_fraction)
-        self.payroll_by_year = pd.Series(index=self.year_range, data=0)
-        self.payroll_expenditures_by_year = pd.Series(index=self.year_range, data=0)
-        self.get_final_costs()
+        # self.payroll_by_year = pd.Series(index=self.year_range, data=0)
+        # self.payroll_expenditures_by_year = pd.Series(index=self.year_range, data=0)
+        # self.get_final_costs()
 
     def get_expenditures_by_year(self):
         """MBTA has no non-payroll operating expenditures"""
         self.non_payroll_operating_expenditures_by_year = pd.Series(index=self.year_range, data=0)
         self.non_hidden_fringe_by_year = pd.Series(index=self.year_range, data=0)
 
-    def get_final_costs(self, apply_correction=True, add_hidden_costs=False, pensions_statewide=None):
-        """Janky to pass pensions_statewide df but never use it, but I'm up against deadline today """
-        if self.payroll_by_year.sum() == 0:
-            self.add_payroll_by_year()
-
-
-        #Following is duplicated code
-        self.non_payroll_operating_expenditures_by_year = pd.Series(index=list(range(2016, 2020)), data=0)
-        final = self.payroll_by_year + self.non_payroll_operating_expenditures_by_year \
-                + self.pensions + self.fringe + self.capital_expenditures_by_year
-        return self.correction_function(final)
+    # def get_final_costs(self, apply_correction=True, add_hidden_costs=False, pensions_statewide=None):
+    #     """Janky to pass pensions_statewide df but never use it, but I'm up against deadline today """
+    #     if self.payroll_by_year.sum() == 0:
+    #         self.add_payroll_by_year()
+    #
+    #
+    #     #Following is duplicated code
+    #     self.non_payroll_operating_expenditures_by_year = pd.Series(index=list(range(2016, 2020)), data=0)
+    #     final = self.payroll_by_year + self.non_payroll_operating_expenditures_by_year \
+    #             + self.pensions + self.fringe + self.capital_expenditures_by_year
+    #     return self.correction_function(final)
 
     def add_payroll_by_year(self):
         """This is combination of cthru and budget pdf I found online at

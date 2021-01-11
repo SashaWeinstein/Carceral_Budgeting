@@ -10,6 +10,7 @@ from CPCS import CPCS
 from ChelseaPD import ChelseaPD
 from ReverePD import ReverePD
 from WinthropPD import WinthropPD
+from Trial_Court import Trial_Court
 
 sys.path.insert(0, "/Users/alexanderweinstein/Documents/Harris/Summer2020/Carceral_Budgeting/Exploratory/Agency_Corrections/")
 
@@ -31,7 +32,7 @@ out_dict = {}
 
 def get_agencies(yr):
     """New July 21: add MA sheriff's association"""
-    out_dict["trial_court"] = StateAgency(alias="trial_court", official_name="TRIAL COURT (TRC)", year_range=yr,
+    out_dict["trial_court"] = Trial_Court(alias="trial_court", official_name="TRIAL COURT (TRC)", year_range=yr,
                                           payroll_vendors=["TRC - SUMMARY PAYROLL"], client=client, category="Legal",
                                           correction_function=trial_court_correction,
                                           settlement_agencies=["TRIAL COURT"])

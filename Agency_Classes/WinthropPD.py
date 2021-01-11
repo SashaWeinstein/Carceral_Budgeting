@@ -8,14 +8,13 @@ sys.path.insert(0, "%sPensions" % cost_type_dir)
 
 from LocalPD_Pensions import WinthropPD_Pensions_Benefits
 
-from Agency_Parent import Agency
+from Police_Dept import PoliceDepartment
 
-class WinthropPD(Agency):
+class WinthropPD(PoliceDepartment):
     """Last Updated by Sasha July 30th to pass ReverePD object"""
 
     def __init__(self, yr, ReverePD_fraction):
-        Agency.__init__(self, alias="Winthrop PD", official_name="Winthrop PD", year_range=yr,
-                        correction_function=lambda x:x, category="Police")
+        PoliceDepartment.__init__(self, alias="Winthrop PD", official_name="Winthrop PD", year_range=yr)
 
         self.budget_summary = pd.DataFrame(columns=self.year_range, index=["Payroll Expenses",
                                                                            "Capital Expenses",
@@ -36,6 +35,7 @@ class WinthropPD(Agency):
         self.non_payroll_operating_expenditures_by_year = self.operating_costs - self.payroll_by_year - \
                                                           self.capital_expenditures_by_year
         self.payroll_expenditures_by_year = self.payroll_by_year
+        self.payroll_by_year = self.payroll_by_year.astype(float) #Figure out why this is needed during refactor
 
 
     def get_budget_summary(self):

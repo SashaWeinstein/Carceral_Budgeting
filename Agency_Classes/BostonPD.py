@@ -3,7 +3,7 @@ Boston PD class was given it's own file Dec 29
 """
 import pandas as pd
 
-from Agency_Parent import Agency
+from Police_Dept import PoliceDepartment
 
 from LocalPD_External_Funds import BostonPD_External_Funds
 from BostonPD_Non_Payroll_Operating import get_BostonPD_Non_Payroll_Operating
@@ -13,11 +13,11 @@ from LocalPD_Fringe import BostonPD_Fringe
 from LocalPD_True_Payroll import True_Earnings
 
 
-class BostonPD(Agency):
+class BostonPD(PoliceDepartment):
     """"""
 
     def __init__(self, yr):
-        Agency.__init__(self, alias="Boston PD", official_name="Boston PD", year_range=yr, correction_function=lambda x:x, category="Police")
+        PoliceDepartment.__init__(self, alias="Boston PD", official_name="Boston PD", year_range=yr)
         self.federal_expenditures_by_year = BostonPD_External_Funds()  # New August 14th
 
         self.non_payroll_operating_expenditures_by_year, self.fraction_all_federal, self.non_hidden_fringe = \
@@ -35,3 +35,4 @@ class BostonPD(Agency):
         total_earnings, self.PD_fraction_non_teacher, self.PD_fraction_total, PD_payroll = True_Earnings(self.alias)
         self.payroll = PD_payroll
         self.payroll_by_year = total_earnings * (1-self.fraction_all_federal)
+        self.payroll_by_year = self.payroll_by_year.astype(float) #Somehow payroll by year is being converted to string somewhere along the way. Solve during refactor
