@@ -21,7 +21,7 @@ Suffolk_DA Fringe Benefit Costs,Suffolk_DA,Legal,Fringe Benefits,6029104.8379482
 Suffolk_DA Capital Costs,Suffolk_DA,Legal,Capital,0.0,0.0,0.0,0.0
 Suffolk_Sheriff Payroll Costs,Suffolk_Sheriff,Jails,Payroll,81241417.13794905,82071839.53163731,84101778.22016396,85006459.73055367
 Suffolk_Sheriff Non-Payroll Operating Costs,Suffolk_Sheriff,Jails,Non-Payroll Operating,12144514.950000007,10874851.970000148,11296755.810000066,12219683.860000046
-Suffolk_Sheriff Pension Costs,Suffolk_Sheriff,Jails,Pensions,14068502.890001066,14974931.96013771,15901941.134422608,17205456.18967759
+Suffolk_Sheriff Pension Costs,Suffolk_Sheriff,Jails,Pensions,10198502.890001066,11104931.96013771,12031941.134422608,13335456.18967759
 Suffolk_Sheriff Fringe Benefit Costs,Suffolk_Sheriff,Jails,Fringe Benefits,32546239.641465504,32537435.15590136,30933082.789186735,30155228.96788406
 Suffolk_Sheriff Capital Costs,Suffolk_Sheriff,Jails,Capital,571687.4199999999,187480.63,223467.37,93823.75
 State_Police Payroll Costs,State_Police,Police,Payroll,353785069.23558754,363805343.022514,368611410.9484487,363778728.64973134
@@ -72,7 +72,7 @@ Boston PD Capital Costs,Boston PD,Police,Capital,5441996.0,7909564.0,18625711.0,
 Chelsea PD Payroll Costs,Chelsea PD,Police,Payroll,12165124.099999912,12770764.809999686,14734808.949999768,9685922.0
 Chelsea PD Non-Payroll Operating Costs,Chelsea PD,Police,Non-Payroll Operating,1050166.0,701295.76,710475.69,639385.29
 Chelsea PD Pension Costs,Chelsea PD,Police,Pensions,1514959.817408911,1584732.390709209,1667073.2300727435,1968070.244652509
-Chelsea PD Fringe Benefit Costs,Chelsea PD,Police,Fringe Benefits,1006639.6980423306,1193186.200853666,1128745.7279050509,1210009.8834822369
+Chelsea PD Fringe Benefit Costs,Chelsea PD,Police,Fringe Benefits,1023478.9413822726,1193186.200853666,1128745.7279050509,1210009.8834822369
 Chelsea PD Capital Costs,Chelsea PD,Police,Capital,173000.0,164000.0,161438.91,0.0
 Revere PD Payroll Costs,Revere PD,Police,Payroll,9047062.0,9083601.0,9357467.0,9735336.0
 Revere PD Non-Payroll Operating Costs,Revere PD,Police,Non-Payroll Operating,1064650.0,1012450.0,979764.0,983764.0

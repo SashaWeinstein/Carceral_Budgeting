@@ -36,8 +36,6 @@ class MBTA(StateAgency):
         if self.payroll_by_year.sum() == 0:
             self.add_payroll_by_year()
 
-        #For refactor: need to assign this to be zero or something
-        # self.payroll_expenditures_by_year = self.operating_costs
 
         #Following is duplicated code
         self.non_payroll_operating_expenditures_by_year = pd.Series(index=list(range(2016, 2020)), data=0)

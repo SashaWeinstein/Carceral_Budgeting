@@ -16,8 +16,8 @@ sys.path.insert(0, "%sPayroll" % cost_type_dir)
 sys.path.insert(0, "%sNon-Payroll_Operating" % cost_type_dir)
 from Pensions_Final import pensions_from_payouts_fraction
 from Statewide_Payroll import Fraction_Statewide_Payroll
-from DCP_Capital import get_capital_expenditures
-from Statewide_Fringe import Total_Statewide_Fringe
+from DCP_Capital import get_DCP_capital
+from Statewide_Fringe import get_statewide_fringe
 
 agency_corrections_dir = "/Users/alexanderweinstein/Documents/Harris/Summer2020/Carceral_Budgeting" \
                          "/Exploratory/Agency_Corrections/"
@@ -36,10 +36,6 @@ from CY_To_FY import convert_CY_to_FY
 app_token = "2Qa1WiG8G4kj1vGVd2noK7zP0"
 client = Socrata("cthru.data.socrata.com", app_token)
 client.timeout = 40
-
-#To do for refactor: change these to functions where it takes an agency and returns correct fringe/capital costs
-DCP_capital_expenditures = get_capital_expenditures(client)
-total_statewide_fringe = Total_Statewide_Fringe(client)
 
 class StateAgency(Agency):
     """Last updated July 10th to get revenue data into it's own dataframe
@@ -79,7 +75,7 @@ class StateAgency(Agency):
         self.payroll_fraction = Fraction_Statewide_Payroll(self)
         self.pensions, self.local_pensions = pension_function(self)
         self.add_fringe()
-        self.add_DCP_Capital_Expenditures()
+        self.capital_expenditures_by_year += get_DCP_capital(self)
         self.final_costs_calculated = False
         self.get_final_costs()
 
@@ -104,10 +100,6 @@ class StateAgency(Agency):
             return self.correction_function(self.final_cost)
         else:
             return self.final_cost
-
-    def add_DCP_Capital_Expenditures(self):
-        if self.alias in DCP_capital_expenditures.index:
-            self.capital_expenditures_by_year += DCP_capital_expenditures.loc[self.alias, self.year_range]
 
     def add_expenditures(self):
         """Adds expenditures for agency over the given year range
@@ -150,7 +142,7 @@ class StateAgency(Agency):
         self.expenditures["budget_fiscal_year"] = self.expenditures["budget_fiscal_year"].astype(int)
 
     def remove_federal(self):
-        """Written on Dec 31st during refactor to break up monster add_expenditures
+        """Written on Dec 31st
         Fraction Payroll Federal is used to correct payroll record
         Federal Expenditures per year is used for footnotes"""
 
@@ -218,6 +210,11 @@ class StateAgency(Agency):
         payroll_by_FY = convert_CY_to_FY(payroll_by_calendar_year, self.year_range)
         self.payroll_by_year = payroll_by_FY * (1-self.fraction_payroll_federal)
 
+    def add_fringe(self):
+        """Combines fringe from expenditure record with fringe from statewide benefits"""
+        hidden_fringe = get_statewide_fringe(self)
+        self.fringe = hidden_fringe.loc[self.year_range] + self.non_hidden_fringe_by_year
+
     def add_settlements(self):
         """Settlements are NOT used in Dec 31st version of anaylsis. This code is here in case settlements are to be
         added"""
@@ -230,9 +227,3 @@ class StateAgency(Agency):
             self.settlements = pd.Series(index=self.year_range, data=[0] * len(self.year_range))
             self.settlements = self.settlements + settlements_overall.groupby("bfy").sum()["line_amount"]
             self.settlements = self.settlements.loc[self.year_range].fillna(0)
-
-    def add_fringe(self):
-        """Combines fringe from expenditure record with fringe from statewide benefits"""
-        hidden_fringe = self.payroll_fraction * total_statewide_fringe
-        self.fringe = hidden_fringe.loc[self.year_range] + self.non_hidden_fringe_by_year
-

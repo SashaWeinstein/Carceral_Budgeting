@@ -7,6 +7,7 @@ through DCP and smaller projects are through the agency's expenditures but that'
 
 import pandas as pd
 import sys
+from sodapy import Socrata
 
 sys.path.insert(0, "../")
 from Agency_Classes.Agency_Helpers.Find_Data import find_data
@@ -25,6 +26,9 @@ carceral_appropriations = {"trial_court": ["(11025600) COURT FACILITIES CAPITAL 
                            "State_Police": ["(81001001) DEPARTMENT OF STATE POLICE"],
                            }
 
+app_token = "2Qa1WiG8G4kj1vGVd2noK7zP0"
+client = Socrata("cthru.data.socrata.com", app_token)
+
 
 def get_capital_expenditures(client, requery=False):
     DCP = find_data(requery, client, "pegc-naaa", "Department = 'CAPITAL ASSET MANAGEMENT AND MAINTENANCE DIVISION (DCP)'"
@@ -41,3 +45,11 @@ def clean_DCP(DCP):
     DCP["amount"] = DCP["amount"].astype(float)
     DCP["budget_fiscal_year"] = DCP["budget_fiscal_year"].astype(int)
     return DCP
+
+DCP_capital_expenditures = get_capital_expenditures(client)
+
+def get_DCP_capital(agency):
+    if agency.alias in DCP_capital_expenditures.index:
+        return DCP_capital_expenditures.loc[agency.alias]
+    else:
+        return pd.Series(index=agency.year_range, data=0)

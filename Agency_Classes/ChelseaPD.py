@@ -64,6 +64,7 @@ class ChelseaPD(Agency):
 
         #2016 is missing from earnings dataset, use 2017 number
         self.PD_fraction_non_teacher[2016] = self.PD_fraction_non_teacher[2017]
+        self.PD_fraction_total[2016] = self.PD_fraction_total[2017]
 
         #Payroll expenditures are numbers from budget documents
         self.payroll_expenditures_by_year = self.budget_summary.loc[

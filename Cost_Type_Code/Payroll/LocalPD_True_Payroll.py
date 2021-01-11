@@ -64,10 +64,9 @@ def Boston_total_earnings():
     return boston_earnings
 
 
-def remove_schools(df, city, title_column):
+def remove_schools(df, title_column):
     """This link https://mtrs.state.ma.us/service/mtrs-membership-eligibility/#:~:text=Charter%20school%20employees&text=Charter%20school%20teachers%20are%20eligible,to%20be%20ESE%20certified%20%5BM.G.L.&text=71%2C%20%C2%A789(y)%5D,as%20a%20charter%20school%20teacher.
     says that charter school employees are eligible for MRTS so they should be excluded here"""
-    #During refactor this should be pared down to one block of code
     MTRS = (df[title_column].str.contains(title_regex) &
             df["department"].str.contains(dept_regex))
     df["MTRS"] = MTRS
@@ -117,36 +116,20 @@ def PD_Fraction_of_Total(total_earnings, year_col, city, dept_name, earnings_col
     PD_total_earnings = total_earnings[total_earnings["department"] == dept_name]
     PD_by_year = PD_total_earnings.groupby(year_col).sum()[earnings_col]
     total_by_year = total_earnings.groupby(year_col).sum()[earnings_col]
-    no_teachers, _ = remove_schools(total_earnings, city, title_col)
+    no_teachers, _ = remove_schools(total_earnings, title_col)
     total_no_teachers_by_year = no_teachers.groupby(year_col).sum()[earnings_col]
-    # Need to fix this during refactor to not be ugly
-    if city == "Chelsea":
-        # 2016 data is assumed to be 2017 minus difference between 2018 and 2017
-        PD_by_year[2016] = PD_by_year[2017] - (PD_by_year[2018] - PD_by_year[2017])
-        total_by_year[2016] = total_by_year[2017] - (total_by_year[2018] - total_by_year[2017])
-        total_no_teachers_by_year[2016] = total_no_teachers_by_year[2017] - \
-                                          (total_no_teachers_by_year[2018] - total_no_teachers_by_year[2017])
-        return PD_by_year, PD_by_year / total_no_teachers_by_year, PD_by_year / total_by_year, PD_total_earnings
-    elif city=="Boston":
-        # Following code should be extracted to function that averages calendar years
-        return BostonPD_by_FY(PD_by_year, PD_total_earnings, total_by_year, total_no_teachers_by_year, yr)
+
+    if city=="Boston":
+        PD_by_year = convert_CY_to_FY(PD_by_year, yr)
+        total_no_teachers_by_year = convert_CY_to_FY(total_no_teachers_by_year, yr)
+        total_by_year = convert_CY_to_FY(total_by_year, yr)
+
+    PD_fraction_noMTRS_by_year = PD_by_year / total_no_teachers_by_year
+    PD_fraction_by_year = PD_by_year / total_by_year
+
+    return PD_by_year, PD_fraction_noMTRS_by_year, PD_fraction_by_year, PD_total_earnings
 
 
-def BostonPD_by_FY(PD_by_CY, PD_total_earnings, citywide_payroll_by_CY, citywide_noMTRS_payroll_by_CY, yr):
-    """Series passed are by calendar year. Convert to fiscal year and then return:
-     police pay by FY,
-     fraction of citywide payroll to cops by FY,
-     fraction of non-MTRS payroll to cops by FY,
-     df of raw police earnings
-     """
-    PD_by_FY = convert_CY_to_FY(PD_by_CY, yr)
-    total_no_teachers_by_FY = convert_CY_to_FY(citywide_noMTRS_payroll_by_CY, yr)
-    total_by_FY = convert_CY_to_FY(citywide_payroll_by_CY, yr)
-
-    PD_fraction_noMTRS_by_FY = PD_by_FY / total_no_teachers_by_FY
-    PD_fraction_by_FY = PD_by_FY / total_by_FY
-
-    return PD_by_FY, PD_fraction_noMTRS_by_FY, PD_fraction_by_FY, PD_total_earnings
 def get_numeric(x):
     if isinstance(x, float) or isinstance(x, int):
         return x

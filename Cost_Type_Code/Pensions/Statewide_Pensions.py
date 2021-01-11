@@ -14,9 +14,6 @@ for Suffolk County. They do still need to be corrected based on the assumption t
 resources go to cases that aren't 'criminal.'
 """
 
-#To do for refactor: one file that "serves" each payroll series. That file loads in functions from statewide and localPD,
-# and then has functions that are called by the classes
-
 import pandas as pd
 import numpy as np
 import sys
@@ -37,10 +34,14 @@ carceral_departments = {"trial_court_local": ["Suffolk Superior Court",
                                                   "Juvenile Court Administration",
                                                   "Trial Court Cse Unit",
                                                   "Trial Court Law Libraries"],
-                        "state_police": ["State Police"],
+                        "State_Police": ["State Police"],
                         "Parole_Board": ["Parole Board"],
                         "Supreme_Judicial_Court": ["Supreme Judicial Court"],
-                        "Appeals_Court": ["Appeals CourT-John Adams Court"]}
+                        "Appeals_Court": ["Appeals CourT-John Adams Court"],
+                        "CPCS": ["Public Counsel Services"],
+                        "Suffolk_DA": ["District Att.,suffolk District"],
+                        "Suffolk_Sheriff": ["Suffolk Sheriff's Office"],
+                        "DAA":["District Attorney's Assoc."]}
 
 DOC_departments = ["Corrections - Transportation", "Corrections Reintr. Unit",
                                 "Corrections Training Academy", "Dept Of Corrections",
@@ -56,9 +57,6 @@ def pensions_by_agency(requery):
     pcnt_of_total = as_pcnt_of_total(cthru_pension_payouts, requery)
     contributions_by_year = pension_contributions_by_year(requery)
     return pension_payments_statewide(pcnt_of_total, contributions_by_year), contributions_by_year
-
-
-
 
 def get_cthru_pension_payouts(requery):
     """New July 30th"""
@@ -92,6 +90,7 @@ def pension_payments_statewide(payouts_fraction, contributions_by_year):
     pension_costs_statewide_calculated = pd.DataFrame(index=payouts_fraction.index, columns=payouts_fraction.columns)
     for year in list(range(2016,2020)):
         pension_costs_statewide_calculated[year] = payouts_fraction[year] * contributions_by_year[year]
+
     sheriff_extra(pension_costs_statewide_calculated)
     return pension_costs_statewide_calculated
 
@@ -112,7 +111,8 @@ def DOC_pensions(requery):
     """DOC requires it's own separate methodology because a bookkeeping error forces us to make some estimations
     Bookkeepping error is that 160 million dollars of retirement money was paid out in 2020, whereas previous 10 years
     has 6-11 million in retirement benefits paid out. So plan is to assume the 160 million is spread out over the
-    previous ten years, following the same trend the other money does"""
+    previous ten years, following the same trend the other money does
+    This is not used in the final anaylsis but kept in for purposes of finding hidden costs"""
     DOC_SOQL = "(department_last_worked_in LIKE '%Corrections%')"
     DOC_pensions = find_data(requery, client, "pni4-392n", DOC_SOQL, "cthru_DOC_retirement_benefits.csv")
     DOC_pensions = clean_pensions(DOC_pensions)
@@ -126,7 +126,7 @@ def DOC_pensions(requery):
 
 def sheriff_extra(df):
     """Added august 12th to account for City of Boston's obligations to retirees of suffolk sheriff's office. From
-    Boston state budget:
+    page 42 of FY19 Boston Summary Budget budget:
          State legislation converted all existing and future Suffolk County Sheriff employees to state employees
          effective January 1, 2010. The State charges the City for Suffolk County through an assessment based on the
         residual unfunded pension liability for former Sherriff employees who retired prior to January 1, 2010.
@@ -146,38 +146,9 @@ def clean_pensions(cthru_pensions):
     return cthru_pensions
 
 
-def find_umbrella(val, title):
-    for umbrella, depts in carceral_departments.items():
-        if val in depts:
-            return umbrella
-        elif "State Police" in title and "Dispatcher" not in title:
-            return "state_police"
-    return np.NaN
-
 def find_agency(dept):
-    """Created in Version 2 to get agency class for each payment
-    Should be made prettier in refactor """
-    if dept == "Suffolk Sheriff's Office":
-        return "Suffolk_Sheriff"
-    if dept == "District Att.,suffolk District":
-        return "Suffolk_DA"
-    if dept == "Public Counsel Services":
-        return "CPCS"
-    if dept == "District Attorney's Assoc.":
-        return "DAA"
-    if dept == "Parole Board":
-        return "Parole_Board"
-    if dept == "Supreme Judicial Court":
-        return "Supreme_Judicial_Court"
-    if dept =="Appeals CourT-John Adams Court":
-        return "Appeals_Court"
-    if dept in carceral_departments["trial_court_statewide"]:
-        return "trial_court_statewide"
-    if dept in carceral_departments["trial_court_local"]:
-        return "trial_court_local"
-    if dept in carceral_departments["state_police"]:
-        return "State_Police"
+    """Created in Version 2 to get agency class for each payment"""
+    for alias, official in carceral_departments.items():
+        if dept in official:
+            return alias
     return None
-
-#To do: see if there is nice way for user to pass in requery variable
-#also to do: give this it's own file?
