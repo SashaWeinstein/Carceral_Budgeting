@@ -65,6 +65,8 @@ def ChelseaPD_Fringe(agency):
 
     citywide_fringe.loc["Total"] = citywide_fringe.sum()
 
+    #Remove 2016 fringe as it's included in budget pdf payroll numbers
+    citywide_fringe.loc["Total", 2016] = 0
     return citywide_fringe.loc["Total"]*agency.PD_fraction_total
 
 def ReverePD_Fringe(PD_fraction):

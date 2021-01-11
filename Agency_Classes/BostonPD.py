@@ -35,4 +35,3 @@ class BostonPD(PoliceDepartment):
         total_earnings, self.PD_fraction_non_teacher, self.PD_fraction_total, PD_payroll = True_Earnings(self.alias)
         self.payroll = PD_payroll
         self.payroll_by_year = total_earnings * (1-self.fraction_all_federal)
-        self.payroll_by_year = self.payroll_by_year.astype(float) #Somehow payroll by year is being converted to string somewhere along the way. Solve during refactor

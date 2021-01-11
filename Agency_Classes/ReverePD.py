@@ -90,4 +90,3 @@ class ReverePD(PoliceDepartment):
         self.payroll_expenditures_by_year = self.budget_summary.loc["Payroll Adopted", self.year_range]
         self.non_payroll_operating_expenditures_by_year = self.budget_summary.loc["Non-Payroll Expenses Adopted"]
         self.payroll_by_year = self.payroll_expenditures_by_year
-        self.payroll_by_year = self.payroll_by_year.astype(float) #Why is this conversion needed? Figure out during refactor

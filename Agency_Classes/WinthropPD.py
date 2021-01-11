@@ -35,7 +35,6 @@ class WinthropPD(PoliceDepartment):
         self.non_payroll_operating_expenditures_by_year = self.operating_costs - self.payroll_by_year - \
                                                           self.capital_expenditures_by_year
         self.payroll_expenditures_by_year = self.payroll_by_year
-        self.payroll_by_year = self.payroll_by_year.astype(float) #Figure out why this is needed during refactor
 
 
     def get_budget_summary(self):
