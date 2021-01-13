@@ -30,7 +30,7 @@ client.timeout = 40
 out_dict = {}
 
 
-def get_agencies(yr):
+def get_agencies(yr=list(range(2016,2020))):
     """New July 21: add MA sheriff's association"""
     out_dict["trial_court"] = Trial_Court(alias="trial_court", official_name="TRIAL COURT (TRC)", year_range=yr,
                                           payroll_vendors=["TRC - SUMMARY PAYROLL"], client=client, category="Legal",
@@ -105,6 +105,6 @@ def get_agencies(yr):
     out_dict["Chelsea PD"] = ChelseaPD(yr)
     out_dict["Revere PD"] = ReverePD(yr)
 
-    out_dict["Winthrop PD"] = WinthropPD(yr, out_dict["Revere PD"].PD_fraction)
+    out_dict["Winthrop PD"] = WinthropPD(yr, out_dict["Revere PD"].PD_fraction_total)
 
     return out_dict

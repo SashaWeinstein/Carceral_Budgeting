@@ -35,8 +35,8 @@ class ReverePD(PoliceDepartment):
         self.get_budget_summary()
         self.add_operating_costs()
         self.capital_expenditures_by_year = ReverePD_Capital_Costs()
-        self.pensions, self.PD_fraction = ReverePD_Pensions(self)
-        self.fringe = ReverePD_Fringe(self.PD_fraction)
+        self.pensions, self.PD_fraction_total = ReverePD_Pensions(self)
+        self.fringe = ReverePD_Fringe(self.PD_fraction_total)
 
 
     def get_budget_summary(self):
