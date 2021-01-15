@@ -30,6 +30,7 @@ class ChelseaPD(PoliceDepartment):
                                                                            "Total Expenditures"])
         self.get_budget_summary()
         self.add_true_earnings()
+        self.calculate_hidden_payroll()
         self.pensions = ChelseaPD_Pensions(self)
         self.fringe = ChelseaPD_Fringe(self)
 

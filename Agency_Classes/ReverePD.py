@@ -34,6 +34,7 @@ class ReverePD(PoliceDepartment):
                                                                            "Total Expenditures"])
         self.get_budget_summary()
         self.add_operating_costs()
+        self.calculate_hidden_payroll()
         self.capital_expenditures_by_year = ReverePD_Capital_Costs()
         self.pensions, self.PD_fraction_total = ReverePD_Pensions(self)
         self.fringe = ReverePD_Fringe(self.PD_fraction_total)

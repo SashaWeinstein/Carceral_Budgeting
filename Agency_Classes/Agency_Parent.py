@@ -10,7 +10,7 @@ class Agency():
     certain % of their budget on suffolk county
     Eventually each type should go here"""
 
-    def __init__(self, alias, official_name, year_range, category, correction_function=None):
+    def __init__(self, alias, official_name, year_range, category, correction_function=lambda x: x):
         self.alias = alias
         self.official_name = official_name
         self.year_range = year_range
@@ -18,19 +18,16 @@ class Agency():
         self.requery = False
         self.category = category
         # Following two attr are from expenditures dataset
-        self.payroll_expenditures_by_year = None
-        self.true_payroll_by_year = None  # Work on this next
+        self.payroll_expenditures_by_year = pd.Series(index=year_range, data=0)
         self.non_payroll_operating_expenditures_by_year = pd.Series(index=self.year_range, data=0)
-        if correction_function:
-            self.correction_function = correction_function
-        else:
-            self.correction_function = lambda x: x
+        self.correction_function = correction_function
         self.pensions = pd.Series(index=year_range, data=0)
+        self.payroll_by_year = pd.Series(index=self.year_range, data=None)
         self.local_pensions = pd.Series(index=year_range, data=0)
-
+        self.hidden_payroll = pd.Series(index=year_range, data=0)
         self.fringe = pd.Series(index=self.year_range, data=0)
-        self.federal_expenditures_by_year = pd.Series(index=list(range(2016, 2020)),
-                                                      data=0)  # needs fix: have to use range here cause some police year ranges aren't 2016-2020. Have to fix that then can use self.year_range
+        self.federal_expenditures_by_year = pd.Series(index=year_range,
+                                                      data=0)
 
         self.capital_expenditures_by_year = pd.Series(index=year_range, data=0)
         assert category in ["Legal", "Jails", "Police",
@@ -42,11 +39,15 @@ class Agency():
         """Moved from StateAgency to Parent Agency class on July 2nd"""
         return client.get(dataset, where=SOQL_constructor(), limit=999999)
 
+    def calculate_hidden_payroll(self):
+        """Added Jan 14"""
+        self.hidden_payroll = self.payroll_by_year - self.payroll_expenditures_by_year
 
-    def get_final_costs(self, apply_correction=True, by_cost_type=False):
-        """This is to be called in code that accesses the data anaylsis. Two options for the user
+    def get_final_costs(self, apply_correction=True, by_cost_type=False, split_payroll=False):
+        """This is to be called in code that accesses the data anaylsis. Three options for the user
          1) Apply correction. Bobby has at certain points asked for statewide costs not limited to suffolk county
-         2) Break out costs by cost type. Sometimes I want this, sometimes I just want final number"""
+         2) Break out costs by cost type. Sometimes I want this, sometimes I just want final number
+         3) Split payroll into payroll expenditures and hidden payroll """
 
         self.total_cost = self.payroll_by_year + self.non_payroll_operating_expenditures_by_year + \
                           self.pensions + self.fringe + \
@@ -56,19 +57,34 @@ class Agency():
             correction = self.correction_function
         else:
             correction = lambda x: x
-
         #Don't know why some costs aren't saved as floats. Fix during refactor
+        rv = []
         final_cost = correction(self.total_cost).astype(float)
-        final_payroll = correction(self.payroll_by_year).astype(float)
-        final_non_payroll_operating = correction(self.non_payroll_operating_expenditures_by_year).astype(float)
-        final_pensions = self.pension_correction(apply_correction, correction).astype(float) #This has seperate method because TRC class overwrites
-        final_fringe = correction(self.fringe).astype(float)
-        final_capital = correction(self.capital_expenditures_by_year).astype(float)
-
+        rv.append(final_cost)
         if by_cost_type:
-            return final_cost, final_payroll, final_non_payroll_operating, final_pensions, final_fringe, final_capital
-        else:
-            return final_cost
+            if split_payroll:
+                payroll_expenditures = correction(self.payroll_expenditures_by_year).astype(float)
+                rv.append(payroll_expenditures)
+                hidden_payroll = correction(self.hidden_payroll).astype(float)
+                rv.append(hidden_payroll)
+            else:
+                final_payroll = correction(self.payroll_by_year).astype(float)
+                rv.append(final_payroll)
+            final_non_payroll_operating = correction(self.non_payroll_operating_expenditures_by_year).astype(float)
+            rv.append(final_non_payroll_operating)
+            final_pensions = self.pension_correction(apply_correction, correction).astype(float) #This uses pension correction function as TRC has seperate correction
+            rv.append(final_pensions)
+            final_fringe = correction(self.fringe).astype(float)
+            rv.append(final_fringe)
+            final_capital = correction(self.capital_expenditures_by_year).astype(float)
+            rv.append(final_capital)
+
+        return rv
+
+        # if by_cost_type:
+        #     return final_cost, final_payroll, final_non_payroll_operating, final_pensions, final_fringe, final_capital
+        # else:
+        #     return final_cost
 
     def __repr__(self):
         return "Agency object for " + self.alias

@@ -20,9 +20,10 @@ class BostonPD(PoliceDepartment):
         PoliceDepartment.__init__(self, alias="Boston PD", official_name="Boston PD", year_range=yr)
         self.federal_expenditures_by_year = BostonPD_External_Funds()  # New August 14th
 
-        self.non_payroll_operating_expenditures_by_year, self.fraction_all_federal, self.non_hidden_fringe = \
-            get_BostonPD_Non_Payroll_Operating(self)
+        self.non_payroll_operating_expenditures_by_year, self.fraction_all_federal, self.non_hidden_fringe, \
+            self.payroll_expenditures_by_year = get_BostonPD_Non_Payroll_Operating(self)
         self.add_true_earnings()
+        self.calculate_hidden_payroll()
         self.pensions = BostonPD_Pensions(self)
         self.fringe = BostonPD_Fringe(self) + self.non_hidden_fringe
         self.capital_expenditures_by_year = get_BostonPD_Capital_Costs(self.year_range)

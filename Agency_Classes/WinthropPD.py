@@ -22,6 +22,7 @@ class WinthropPD(PoliceDepartment):
         self.get_budget_summary()
         self.fringe, self.pensions = WinthropPD_Pensions_Benefits(ReverePD_fraction)
         self.add_operating_costs()
+        self.calculate_hidden_payroll()
 
     def add_operating_costs(self, apply_correction=True, add_hidden_costs=True, pensions_statewide=None):
         """Written August 12th

@@ -44,7 +44,7 @@ class StateAgency(Agency):
     the objects aren't re-initialized. Should figure out what is going on
     Actually, objects are getting intialized when I import initialize agencies, which isn't what I want."""
 
-    def __init__(self, alias, official_name, year_range, category, correction_function=None, settlement_agencies=None,
+    def __init__(self, alias, official_name, year_range, category, correction_function=lambda x:x, settlement_agencies=None,
                  payroll_vendors=[], payroll_official_name=None, client=None,
                  pension_function=pensions_from_payouts_fraction,
                  remove_R24=False):
@@ -59,7 +59,6 @@ class StateAgency(Agency):
         self.calender_year_data = True  # New June 24th
 
         self.payroll = None  # New on June 22nd
-        self.payroll_by_year = pd.Series(index=self.year_range, data=None)
         self.pay_col = None  # List of column names to keep and sum payroll info over
 
         self.expenditures_by_year = pd.DataFrame(columns=self.year_range)
@@ -67,6 +66,7 @@ class StateAgency(Agency):
         self.remove_R24 = remove_R24
         self.get_expenditures_by_year()
         self.add_payroll_by_year()
+        self.calculate_hidden_payroll()
         # Code to get payroll fraction should be moved somewhere else
         self.payroll_fraction = Fraction_Statewide_Payroll(self)
         self.pensions, self.local_pensions = pension_function(self)
@@ -186,6 +186,7 @@ class StateAgency(Agency):
         payroll_by_calendar_year = self.payroll.groupby("year")["pay_total_actual"].sum().T
         payroll_by_FY = convert_CY_to_FY(payroll_by_calendar_year, self.year_range)
         self.payroll_by_year = payroll_by_FY * (1 - self.fraction_payroll_federal)
+
 
     def add_fringe(self):
         """Combines fringe from expenditure record with fringe from statewide benefits"""
