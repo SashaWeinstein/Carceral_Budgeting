@@ -53,16 +53,8 @@ class StateAgency(Agency):
         self.payroll_official_name = payroll_official_name  # MBTA is lowercase in payroll system for some reason
         self.payroll_vendors = payroll_vendors  # Should be a list of vendors.
         self.settlement_agencies = settlement_agencies
-        self.capital_expenditures_by_year = pd.Series(index=self.year_range, data=0)
-        self.non_hidden_fringe = pd.DataFrame()  # New Nov 9th
-        self.non_hidden_fringe_by_year = pd.Series(index=self.year_range, data=0)
-        self.calender_year_data = True  # New June 24th
-
-        self.payroll = None  # New on June 22nd
-        self.pay_col = None  # List of column names to keep and sum payroll info over
 
         self.expenditures_by_year = pd.DataFrame(columns=self.year_range)
-        self.operating_costs = None  # This is where cost type "operating costs" will be stored
         self.remove_R24 = remove_R24
         self.get_expenditures_by_year()
         self.add_payroll_by_year()
@@ -71,7 +63,9 @@ class StateAgency(Agency):
         self.payroll_fraction = Fraction_Statewide_Payroll(self)
         self.pensions, self.local_pensions = pension_function(self)
         self.add_fringe()
-        self.capital_expenditures_by_year += get_DCP_capital(self)
+        self.hidden_capital_expenditures_by_year = get_DCP_capital(self)
+        self.capital_expenditures_by_year = self.non_hidden_capital_expenditures_by_year + \
+                                            self.hidden_capital_expenditures_by_year #Refactor
 
 
 
@@ -104,16 +98,16 @@ class StateAgency(Agency):
     def remove_fringe_expenditures(self):
         non_hidden_fringe = self.expenditures[
             self.expenditures["object_class"] == "(DD) PENSION & INSURANCE RELATED EX"]
-        self.non_hidden_fringe_by_year = non_hidden_fringe.groupby("budget_fiscal_year").sum()["amount"].T
-        self.non_hidden_fringe_by_year = self.non_hidden_fringe_by_year.reindex(self.year_range, fill_value=0)
+        self.non_hidden_fringe = non_hidden_fringe.groupby("budget_fiscal_year").sum()["amount"].T
+        self.non_hidden_fringe = self.non_hidden_fringe.reindex(self.year_range, fill_value=0)
         self.expenditures = self.expenditures[
             self.expenditures["object_class"] != "(DD) PENSION & INSURANCE RELATED EX"]
 
     def remove_capital_expenditures(self):
         capital_expenditures = self.expenditures[self.expenditures["appropriation_type"] == "(2CN) CAPITAL"]
-        self.capital_expenditures_by_year = capital_expenditures.groupby("budget_fiscal_year").sum()[
+        non_hidden_capital_expenditures_by_year = capital_expenditures.groupby("budget_fiscal_year").sum()[
             "amount"].T
-        self.capital_expenditures_by_year = self.capital_expenditures_by_year.reindex(self.year_range, fill_value=0)
+        self.non_hidden_capital_expenditures_by_year = non_hidden_capital_expenditures_by_year.reindex(self.year_range, fill_value=0)
         self.expenditures = self.expenditures[self.expenditures["appropriation_type"] != "(2CN) CAPITAL"]
 
     def clean_expenditures(self):
@@ -190,8 +184,8 @@ class StateAgency(Agency):
 
     def add_fringe(self):
         """Combines fringe from expenditure record with fringe from statewide benefits"""
-        hidden_fringe = get_statewide_fringe(self)
-        self.fringe = hidden_fringe.loc[self.year_range] + self.non_hidden_fringe_by_year
+        self.hidden_fringe = get_statewide_fringe(self).loc[self.year_range]
+        self.fringe = self.hidden_fringe + self.non_hidden_fringe
 
     def add_settlements(self):
         """Settlements are NOT used in Dec 31st version of anaylsis. This code is here in case settlements are to be

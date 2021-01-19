@@ -8,7 +8,7 @@ home_dir = "/Users/alexanderweinstein/Documents/Harris/Summer2020/Carceral_Budge
 sys.path.insert(0, home_dir)
 from Initialize_Agencies import get_agencies
 
-misc_viz_helpers_dir = "/Users/alexanderweinstein/Documents/Harris/Summer2020/Carceral_Budgeting/Exploratory/Visualize/Misc_Viz"
+misc_viz_helpers_dir = "/Visualize/Misc_Viz_Helpers"
 sys.path.insert(0, misc_viz_helpers_dir)
 from Pretty_Names import Prettify_AN
 

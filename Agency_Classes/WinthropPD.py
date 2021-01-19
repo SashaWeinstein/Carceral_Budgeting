@@ -20,9 +20,11 @@ class WinthropPD(PoliceDepartment):
                                                                            "Capital Expenses",
                                                                            "Total Expenses"])
         self.get_budget_summary()
-        self.fringe, self.pensions = WinthropPD_Pensions_Benefits(ReverePD_fraction)
+        self.hidden_fringe, self.pensions = WinthropPD_Pensions_Benefits(ReverePD_fraction)
+        self.fringe = self.hidden_fringe + self.non_hidden_fringe
         self.add_operating_costs()
         self.calculate_hidden_payroll()
+
 
     def add_operating_costs(self, apply_correction=True, add_hidden_costs=True, pensions_statewide=None):
         """Written August 12th
@@ -32,7 +34,8 @@ class WinthropPD(PoliceDepartment):
         self.operating_costs = self.budget_summary.loc["Total Expenses"]
 
         self.payroll_by_year = self.budget_summary.loc["Payroll Expenses"]
-        self.capital_expenditures_by_year = self.budget_summary.loc["Capital Expenses"]
+        self.non_hidden_capital_expenditures_by_year = self.budget_summary.loc["Capital Expenses"]
+        self.capital_expenditures_by_year = self.non_hidden_capital_expenditures_by_year #Refactor
         self.non_payroll_operating_expenditures_by_year = self.operating_costs - self.payroll_by_year - \
                                                           self.capital_expenditures_by_year
         self.payroll_expenditures_by_year = self.payroll_by_year

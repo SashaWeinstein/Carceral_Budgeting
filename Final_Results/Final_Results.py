@@ -25,7 +25,7 @@ def get_by_Agency_Cost_Type_empty_df():
 def get_preCorrection_by_Agency_Type():
     final_by_agency_type_pre_correction = get_by_Agency_Cost_Type_empty_df()
     for _, agency in agencies.items():
-        total_cost, payroll, non_payroll_operating, pensions, fringe, capital = agency.get_final_costs(False, True)
+        total_cost, payroll, fringe, capital, non_payroll_operating, pensions = agency.get_final_costs(False, True)
         final_by_agency_type_pre_correction.loc[agency.alias + " Payroll Costs"] = [agency.alias, agency.category, "Payroll"] + list(payroll)
         final_by_agency_type_pre_correction.loc[agency.alias + " Non-Payroll Operating Costs"] = [agency.alias, agency.category, "Non-Payroll Operating"] + list(non_payroll_operating)
         final_by_agency_type_pre_correction.loc[agency.alias + " Pension Costs"] = [agency.alias, agency.category, "Pensions"] + list(pensions)
@@ -35,7 +35,7 @@ def get_preCorrection_by_Agency_Type():
 
 by_agency_type = get_by_Agency_Cost_Type_empty_df()
 for _, agency in agencies.items():
-    total_cost, payroll, non_payroll_operating, pensions, fringe, capital = agency.get_final_costs(True, True)
+    total_cost, payroll, fringe, capital, non_payroll_operating, pensions  = agency.get_final_costs(True, True)
     by_agency_type.loc[agency.alias + " Payroll Costs"] = [agency.alias, agency.category, "Payroll"] + list(payroll)
     by_agency_type.loc[agency.alias + " Non-Payroll Operating Costs"] = [agency.alias, agency.category, "Non-Payroll Operating"] + list(non_payroll_operating)
     by_agency_type.loc[agency.alias + " Pension Costs"] = [agency.alias, agency.category, "Pensions"] + list(pensions)
@@ -52,25 +52,39 @@ def get_by_Type():
 
 
 
-by_agency_type_split_payroll = pd.DataFrame(columns=["Agency", "Category", "Cost Type", "Hidden"] + yr)
+by_agency_type_split_hidden = pd.DataFrame(columns=["Agency", "Category", "Cost Type", "Hidden"] + yr)
 for _, agency in agencies.items():
-    total_cost, stated_payroll, hidden_payroll, non_payroll_operating, pensions, fringe, capital = agency.get_final_costs(True, True, True)
-    by_agency_type_split_payroll.loc[agency.alias + " Stated Payroll Costs"] = [agency.alias, agency.category, "Stated Payroll Costs", False] + list(stated_payroll)
-    by_agency_type_split_payroll.loc[agency.alias + " Hidden Payroll Costs"] = [agency.alias, agency.category, "Hidden Payroll Costs", True] + list(hidden_payroll)
-    by_agency_type_split_payroll.loc[agency.alias + " Non-Payroll Operating Costs"] = [agency.alias, agency.category, "Non-Payroll Operating", False] + list(non_payroll_operating)
-    by_agency_type_split_payroll.loc[agency.alias + " Pension Costs"] = [agency.alias, agency.category, "Pensions", True] + list(pensions)
-    by_agency_type_split_payroll.loc[agency.alias + " Fringe Benefit Costs"] = [agency.alias, agency.category, "Fringe Benefits", True] + list(fringe)
-    by_agency_type_split_payroll.loc[agency.alias + " Capital Costs"] = [agency.alias, agency.category, "Capital", True] + list(capital)
+    total_cost, non_hidden_payroll, hidden_payroll,\
+    non_hidden_fringe, hidden_fringe, non_hidden_capital, hidden_capital,\
+    non_payroll_operating, pensions =\
+        agency.get_final_costs(True, True, True)
+    title_costs= [
+        ("Stated Payroll Costs", non_hidden_payroll, False),
+        ("Hidden Payroll Costs", hidden_payroll, True),
+        ("Stated Fringe Costs", non_hidden_fringe, False),
+        ("Hidden Fringe Costs", hidden_fringe, True),
+        ("Stated Capital Costs", non_hidden_capital, False),
+        ("Hidden Capital Costs", hidden_capital, True),
+        ("Non-Payroll Operating Costs", non_payroll_operating, False),
+        ("Pension Costs", pensions, True)
+    ]
+    print("iterated to agency of ", agency.alias)
+    for t in title_costs:
+        print("iterated to tuple of ")
+        print(t[0])
+        print(t[1])
+        print(t[2])
+        by_agency_type_split_hidden.loc[agency.alias + " " + t[0]] = [agency.alias, agency.category, t[0], t[2]] + list(t[1])
 
-def get_by_Agency_Type_SP():
-    """SP stands for split payroll"""
-    return by_agency_type_split_payroll
+def get_by_Agency_Type_SH():
+    """SH stands for split hidden"""
+    return by_agency_type_split_hidden
 
 def agency_type_apply_gb(columns):
-    return by_agency_type_split_payroll.groupby(columns).sum()[yr]
+    return by_agency_type_split_hidden.groupby(columns).sum()[yr]
 
 
-def get_by_Type_SP():
+def get_by_Type_SH():
     by_cost_type_split_payroll = agency_type_apply_gb("Cost Type")
     return by_cost_type_split_payroll
 
@@ -91,7 +105,7 @@ def get_by_Category_SH():
     return by_category
 
 def get_by_Year():
-    return pd.DataFrame(by_agency_type_split_payroll[yr].sum()).reset_index()
+    return pd.DataFrame(by_agency_type_split_hidden[yr].sum()).reset_index()
 
 def get_by_Year_SH():
     by_hidden = agency_type_apply_gb("Hidden")

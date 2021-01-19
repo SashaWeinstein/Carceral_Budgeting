@@ -67,8 +67,12 @@ def get_BostonPD_Non_Payroll_Operating(agency):
                                                  out_df.loc["External Payroll Expend"])
 
 
+    #Subtract federal external from payroll expenditures too
+    payroll_expend_non_federal = out_df.loc["Payroll Expend"] - \
+                                 out_df.loc["External Payroll Expend"] * (1-fraction_external_federal)
+
 
 
     return total_non_payroll, fraction_all_federal, \
-           out_df.loc["Fringe Expend"], out_df.loc["Payroll Expend"] #Return fringe to be added in fringe calculation
+           out_df.loc["Fringe Expend"], payroll_expend_non_federal #Return fringe to be added in fringe calculation
 

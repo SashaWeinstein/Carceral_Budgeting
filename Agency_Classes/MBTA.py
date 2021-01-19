@@ -26,7 +26,7 @@ class MBTA(StateAgency):
     def get_expenditures_by_year(self):
         """MBTA has no non-payroll operating expenditures"""
         self.non_payroll_operating_expenditures_by_year = pd.Series(index=self.year_range, data=0)
-        self.non_hidden_fringe_by_year = pd.Series(index=self.year_range, data=0)
+        self.non_hidden_fringe = pd.Series(index=self.year_range, data=0)
 
 
 

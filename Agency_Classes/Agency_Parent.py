@@ -26,9 +26,12 @@ class Agency():
         self.local_pensions = pd.Series(index=year_range, data=0)
         self.hidden_payroll = pd.Series(index=year_range, data=0)
         self.fringe = pd.Series(index=self.year_range, data=0)
+        self.non_hidden_fringe = pd.Series(index=self.year_range, data=0)
+        self.hidden_fringe = pd.Series(index=self.year_range, data=0)
         self.federal_expenditures_by_year = pd.Series(index=year_range,
                                                       data=0)
-
+        self.non_hidden_capital_expenditures_by_year = pd.Series(index=year_range, data=0)
+        self.hidden_capital_expenditures_by_year = pd.Series(index=year_range, data=0)
         self.capital_expenditures_by_year = pd.Series(index=year_range, data=0)
         assert category in ["Legal", "Jails", "Police",
                             "Other"], "Category for" + self.alias + "not an existing category"
@@ -43,7 +46,7 @@ class Agency():
         """Added Jan 14"""
         self.hidden_payroll = self.payroll_by_year - self.payroll_expenditures_by_year
 
-    def get_final_costs(self, apply_correction=True, by_cost_type=False, split_payroll=False):
+    def get_final_costs(self, apply_correction=True, by_cost_type=False, split_hidden=False):
         """This is to be called in code that accesses the data anaylsis. Three options for the user
          1) Apply correction. Bobby has at certain points asked for statewide costs not limited to suffolk county
          2) Break out costs by cost type. Sometimes I want this, sometimes I just want final number
@@ -58,33 +61,47 @@ class Agency():
         else:
             correction = lambda x: x
         #Don't know why some costs aren't saved as floats. Fix during refactor
+        """To do during refactor: currently setting by_cost_type equal to false doesn't doesnt get correct answer
+        as it doesn't apply correct correction to TRC pensions. Need to get final cost regardless of whether user asks
+        for answers by cost type, then add values to rv based on by_cost_tye/split_hidden
+        """
         rv = []
         final_cost = correction(self.total_cost).astype(float)
         rv.append(final_cost)
         if by_cost_type:
-            if split_payroll:
+            if split_hidden:
+                #Split Payroll
                 payroll_expenditures = correction(self.payroll_expenditures_by_year).astype(float)
                 rv.append(payroll_expenditures)
                 hidden_payroll = correction(self.hidden_payroll).astype(float)
                 rv.append(hidden_payroll)
+
+                #Split fringe
+                non_hidden_fringe = correction(self.non_hidden_fringe)
+                rv.append(non_hidden_fringe)
+                hidden_fringe = correction(self.hidden_fringe)
+                rv.append(hidden_fringe)
+
+                #Split Capital costs
+                non_hidden_capital = correction(self.non_hidden_capital_expenditures_by_year)
+                rv.append(non_hidden_capital)
+                hidden_capital = correction(self.hidden_capital_expenditures_by_year)
+                rv.append(hidden_capital)
+
             else:
                 final_payroll = correction(self.payroll_by_year).astype(float)
                 rv.append(final_payroll)
+                final_fringe = correction(self.fringe).astype(float)
+                rv.append(final_fringe)
+                final_capital = correction(self.capital_expenditures_by_year).astype(float)
+                rv.append(final_capital)
             final_non_payroll_operating = correction(self.non_payroll_operating_expenditures_by_year).astype(float)
             rv.append(final_non_payroll_operating)
             final_pensions = self.pension_correction(apply_correction, correction).astype(float) #This uses pension correction function as TRC has seperate correction
             rv.append(final_pensions)
-            final_fringe = correction(self.fringe).astype(float)
-            rv.append(final_fringe)
-            final_capital = correction(self.capital_expenditures_by_year).astype(float)
-            rv.append(final_capital)
+
 
         return rv
-
-        # if by_cost_type:
-        #     return final_cost, final_payroll, final_non_payroll_operating, final_pensions, final_fringe, final_capital
-        # else:
-        #     return final_cost
 
     def __repr__(self):
         return "Agency object for " + self.alias

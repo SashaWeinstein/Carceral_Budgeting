@@ -20,7 +20,9 @@ class ChelseaPD(PoliceDepartment):
     New July 6th: take out 'appropriations column' and replace with 'proposed budget column' which
     will only be populated with 2021 data
     Note that there is additional debt service for chelsea but I can't figure out what projects that debt service is
-    from"""
+    from
+    Note on whether Chelsea's Fringe is 'hidden': grey area. It's listed in the budget documents which we
+    end up not using so I said it's not hidden to err on side of caution"""
 
     def __init__(self, yr):
         PoliceDepartment.__init__(self, alias="Chelsea PD", official_name="Chelsea PD", year_range=yr)
@@ -32,7 +34,10 @@ class ChelseaPD(PoliceDepartment):
         self.add_true_earnings()
         self.calculate_hidden_payroll()
         self.pensions = ChelseaPD_Pensions(self)
-        self.fringe = ChelseaPD_Fringe(self)
+        self.non_hidden_fringe = ChelseaPD_Fringe(self)
+        self.fringe = self.non_hidden_fringe
+        self.capital_expenditures_by_year = self.non_hidden_capital_expenditures_by_year + \
+                                            self.hidden_capital_expenditures_by_year #Refactor
 
 
     def get_budget_summary(self):
@@ -40,20 +45,20 @@ class ChelseaPD(PoliceDepartment):
         #From FY20 Document
         self.budget_summary.loc["Payroll Expenditures", 2016] = 9685922
         self.budget_summary.loc["Non-Payroll Expenditures", 2016] = 1050166
-        self.capital_expenditures_by_year.loc[2016] =173000
+        self.non_hidden_capital_expenditures_by_year.loc[2016] =173000
 
         #From FY21 Documeent
         self.budget_summary.loc["Payroll Expenditures", 2017] = 9551598
         self.budget_summary.loc["Non-Payroll Expenditures", 2017] = 701295.76
-        self.capital_expenditures_by_year.loc[2017] = 164000
+        self.non_hidden_capital_expenditures_by_year.loc[2017] = 164000
 
         self.budget_summary.loc["Payroll Expenditures", 2018] = 9923457.54
         self.budget_summary.loc["Non-Payroll Expenditures", 2018] = 710475.69
-        self.capital_expenditures_by_year.loc[2018] = 161438.91
+        self.non_hidden_capital_expenditures_by_year.loc[2018] = 161438.91
 
         self.budget_summary.loc["Payroll Expenditures", 2019] = 11526261.80
         self.budget_summary.loc["Non-Payroll Expenditures", 2019] = 639385.29
-        self.capital_expenditures_by_year.loc[2019] = 0
+        self.non_hidden_capital_expenditures_by_year.loc[2019] = 0
 
 
     def add_true_earnings(self):

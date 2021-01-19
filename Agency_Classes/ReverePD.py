@@ -35,9 +35,11 @@ class ReverePD(PoliceDepartment):
         self.get_budget_summary()
         self.add_operating_costs()
         self.calculate_hidden_payroll()
-        self.capital_expenditures_by_year = ReverePD_Capital_Costs()
+        self.hidden_capital_expenditures_by_year = ReverePD_Capital_Costs()
+        self.capital_expenditures_by_year = self.hidden_capital_expenditures_by_year + self.non_hidden_capital_expenditures_by_year #Refactor
         self.pensions, self.PD_fraction_total = ReverePD_Pensions(self)
-        self.fringe = ReverePD_Fringe(self.PD_fraction_total)
+        self.hidden_fringe = ReverePD_Fringe(self.PD_fraction_total)
+        self.fringe = self.hidden_fringe + self.non_hidden_fringe
 
 
     def get_budget_summary(self):

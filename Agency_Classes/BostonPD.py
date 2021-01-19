@@ -25,8 +25,11 @@ class BostonPD(PoliceDepartment):
         self.add_true_earnings()
         self.calculate_hidden_payroll()
         self.pensions = BostonPD_Pensions(self)
-        self.fringe = BostonPD_Fringe(self) + self.non_hidden_fringe
-        self.capital_expenditures_by_year = get_BostonPD_Capital_Costs(self.year_range)
+        self.hidden_fringe = BostonPD_Fringe(self)
+        self.fringe = self.non_hidden_fringe + self.hidden_fringe
+        self.non_hidden_capital_expenditures_by_year = get_BostonPD_Capital_Costs(self.year_range)
+        self.capital_expenditures_by_year = self.non_hidden_capital_expenditures_by_year + \
+                                            self.hidden_capital_expenditures_by_year #Refactor
 
 
     def add_true_earnings(self):
