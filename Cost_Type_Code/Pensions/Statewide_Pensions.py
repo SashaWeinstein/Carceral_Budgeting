@@ -41,7 +41,8 @@ carceral_departments = {"trial_court_local": ["Suffolk Superior Court",
                         "CPCS": ["Public Counsel Services"],
                         "Suffolk_DA": ["District Att.,suffolk District"],
                         "Suffolk_Sheriff": ["Suffolk Sheriff's Office"],
-                        "DAA":["District Attorney's Assoc."]}
+                        "DAA":["District Attorney's Assoc."],
+                        "DYS":["Youth Service Treatment"]}
 
 DOC_departments = ["Corrections - Transportation", "Corrections Reintr. Unit",
                                 "Corrections Training Academy", "Dept Of Corrections",

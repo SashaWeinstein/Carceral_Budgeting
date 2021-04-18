@@ -6,7 +6,7 @@ trial_court Hidden Fringe Costs,trial_court,Legal,Hidden Fringe Costs,True,92729
 trial_court Stated Capital Costs,trial_court,Legal,Stated Capital Costs,False,705033.7263961175,873040.1154108327,618023.570133196,582633.9668542022
 trial_court Hidden Capital Costs,trial_court,Legal,Hidden Capital Costs,True,2982513.914833156,2293574.005918445,3040048.0012619514,2917173.1824905514
 trial_court Non-Payroll Operating Costs,trial_court,Legal,Non-Payroll Operating Costs,False,5459896.759084597,5063328.750165602,5631905.901909848,6328724.311925994
-trial_court Pension Costs,trial_court,Legal,Pension Costs,True,5117059.819400838,5396153.173373744,6177160.11054144,6626866.819352429
+trial_court Pension Costs,trial_court,Legal,Pension Costs,True,5117059.819400838,5396153.1733737355,6177160.110541426,6626866.819352354
 CPCS Stated Payroll Costs,CPCS,Legal,Stated Payroll Costs,False,2197920.366465228,2201036.7594210417,2412814.0242733727,2545503.28963573
 CPCS Hidden Payroll Costs,CPCS,Legal,Hidden Payroll Costs,True,1305.8142107036501,-60285.87601276524,-66246.12889736719,-38699.97929235953
 CPCS Stated Fringe Costs,CPCS,Legal,Stated Fringe Costs,False,0.0,0.0,0.0,0.0
@@ -14,7 +14,7 @@ CPCS Hidden Fringe Costs,CPCS,Legal,Hidden Fringe Costs,True,851751.7770821314,8
 CPCS Stated Capital Costs,CPCS,Legal,Stated Capital Costs,False,0.0,0.0,0.0,0.0
 CPCS Hidden Capital Costs,CPCS,Legal,Hidden Capital Costs,True,0.0,0.0,0.0,0.0
 CPCS Non-Payroll Operating Costs,CPCS,Legal,Non-Payroll Operating Costs,False,528891.6933534904,544430.2228858573,583634.0850812456,746571.9055345546
-CPCS Pension Costs,CPCS,Legal,Pension Costs,True,134390.11533408286,144637.12362676143,176775.35445943658,198385.98711581077
+CPCS Pension Costs,CPCS,Legal,Pension Costs,True,134390.11533408286,144637.1236267613,176775.35445943606,198385.98711580836
 DOC Stated Payroll Costs,DOC,Jails,Stated Payroll Costs,False,63820019.14834609,60820767.01950119,71074887.93000905,77975126.12545973
 DOC Hidden Payroll Costs,DOC,Jails,Hidden Payroll Costs,True,832334.1073284919,-640102.535227394,330613.77082191064,-296518.3205415561
 DOC Stated Fringe Costs,DOC,Jails,Stated Fringe Costs,False,207689.00998910386,229914.05298243402,252525.69576999347,248671.77709199162
@@ -22,7 +22,7 @@ DOC Hidden Fringe Costs,DOC,Jails,Hidden Fringe Costs,True,25039605.867704555,23
 DOC Stated Capital Costs,DOC,Jails,Stated Capital Costs,False,1733466.362054298,1327766.0652026816,1344679.617677071,1922211.3471044616
 DOC Hidden Capital Costs,DOC,Jails,Hidden Capital Costs,True,3503962.148639448,4442768.49793055,6039343.788685168,6140620.058437064
 DOC Non-Payroll Operating Costs,DOC,Jails,Non-Payroll Operating Costs,False,15413218.623364748,14015834.944134861,16565345.117210465,17777446.92419083
-DOC Pension Costs,DOC,Jails,Pension Costs,True,15858226.738591472,14996006.268805012,17255285.82713516,18787025.77868564
+DOC Pension Costs,DOC,Jails,Pension Costs,True,15858226.738591472,14996006.268805012,17255285.82713516,18787025.778685633
 Suffolk_DA Stated Payroll Costs,Suffolk_DA,Legal,Stated Payroll Costs,False,15388667.620000005,16213453.769999998,15859238.32,17449598.670000006
 Suffolk_DA Hidden Payroll Costs,Suffolk_DA,Legal,Hidden Payroll Costs,True,178502.9599999953,-385097.9800000042,170214.642801933,-158737.1724836491
 Suffolk_DA Stated Fringe Costs,Suffolk_DA,Legal,Stated Fringe Costs,False,0.0,0.0,0.0,0.0
@@ -30,7 +30,7 @@ Suffolk_DA Hidden Fringe Costs,Suffolk_DA,Legal,Hidden Fringe Costs,True,6029104
 Suffolk_DA Stated Capital Costs,Suffolk_DA,Legal,Stated Capital Costs,False,0.0,0.0,0.0,0.0
 Suffolk_DA Hidden Capital Costs,Suffolk_DA,Legal,Hidden Capital Costs,True,0.0,0.0,0.0,0.0
 Suffolk_DA Non-Payroll Operating Costs,Suffolk_DA,Legal,Non-Payroll Operating Costs,False,2736672.7899999926,2795897.999999999,2929760.2499999977,3485928.940000006
-Suffolk_DA Pension Costs,Suffolk_DA,Legal,Pension Costs,True,1423007.7941232529,1511310.1046749125,1600690.82049407,1763099.4997238251
+Suffolk_DA Pension Costs,Suffolk_DA,Legal,Pension Costs,True,1423007.7941232529,1511310.1046749111,1600690.820494065,1763099.499723803
 Suffolk_Sheriff Stated Payroll Costs,Suffolk_Sheriff,Jails,Stated Payroll Costs,False,78987881.38,79324649.94999991,83179277.26000004,86529804.92999998
 Suffolk_Sheriff Hidden Payroll Costs,Suffolk_Sheriff,Jails,Hidden Payroll Costs,True,2253535.7579490542,2747189.5816373974,922500.9601639211,-1523345.1994463056
 Suffolk_Sheriff Stated Fringe Costs,Suffolk_Sheriff,Jails,Stated Fringe Costs,False,1081753.6199999994,996014.76,846701.33,892504.6399999993
@@ -38,7 +38,7 @@ Suffolk_Sheriff Hidden Fringe Costs,Suffolk_Sheriff,Jails,Hidden Fringe Costs,Tr
 Suffolk_Sheriff Stated Capital Costs,Suffolk_Sheriff,Jails,Stated Capital Costs,False,571687.4199999999,187480.63,223467.37,93823.75
 Suffolk_Sheriff Hidden Capital Costs,Suffolk_Sheriff,Jails,Hidden Capital Costs,True,0.0,0.0,0.0,0.0
 Suffolk_Sheriff Non-Payroll Operating Costs,Suffolk_Sheriff,Jails,Non-Payroll Operating Costs,False,12144514.950000007,10874851.970000148,11296755.810000066,12219683.860000046
-Suffolk_Sheriff Pension Costs,Suffolk_Sheriff,Jails,Pension Costs,True,10198502.890001066,11104931.96013771,12031941.134422608,13335456.18967759
+Suffolk_Sheriff Pension Costs,Suffolk_Sheriff,Jails,Pension Costs,True,10198502.890001066,11104931.960137703,12031941.134422585,13335456.189677477
 State_Police Stated Payroll Costs,State_Police,Police,Stated Payroll Costs,False,33273788.581796367,33303816.39046515,34899379.201668344,37620685.90221268
 State_Police Hidden Payroll Costs,State_Police,Police,Hidden Payroll Costs,True,6836163.037511322,8325687.4773202855,7658411.699131309,4620186.076704529
 State_Police Stated Fringe Costs,State_Police,Police,Stated Fringe Costs,False,357.1274160150734,360.4480794428822,363.68120290304074,261.26310987269403
@@ -46,7 +46,7 @@ State_Police Hidden Fringe Costs,State_Police,Police,Hidden Fringe Costs,True,15
 State_Police Stated Capital Costs,State_Police,Police,Stated Capital Costs,False,1386722.9673914714,1656839.0095820662,1749604.5505504347,1829978.3124059187
 State_Police Hidden Capital Costs,State_Police,Police,Hidden Capital Costs,True,32816.836199603014,20603.85645037968,3049.7913130658562,0.0
 State_Police Non-Payroll Operating Costs,State_Police,Police,Non-Payroll Operating Costs,False,3624984.1836939664,3274686.6568769333,3780924.0538569,4095309.9996828996
-State_Police Pension Costs,State_Police,Police,Pension Costs,True,9366469.740159797,10026802.347758139,10850827.84025618,12135454.437414516
+State_Police Pension Costs,State_Police,Police,Pension Costs,True,9366469.740159797,10026802.347758126,10850827.840256145,12135454.437414357
 MBTA Stated Payroll Costs,MBTA,Police,Stated Payroll Costs,False,0.0,0.0,0.0,0.0
 MBTA Hidden Payroll Costs,MBTA,Police,Hidden Payroll Costs,True,3190443.103477736,3194160.5202559824,3317207.4922081092,3877798.3347363425
 MBTA Stated Fringe Costs,MBTA,Police,Stated Fringe Costs,False,0.0,0.0,0.0,0.0
@@ -54,7 +54,7 @@ MBTA Hidden Fringe Costs,MBTA,Police,Hidden Fringe Costs,True,1235646.2500057083
 MBTA Stated Capital Costs,MBTA,Police,Stated Capital Costs,False,0.0,0.0,0.0,0.0
 MBTA Hidden Capital Costs,MBTA,Police,Hidden Capital Costs,True,0.0,0.0,0.0,0.0
 MBTA Non-Payroll Operating Costs,MBTA,Police,Non-Payroll Operating Costs,False,0.0,0.0,0.0,0.0
-MBTA Pension Costs,MBTA,Police,Pension Costs,True,782566.5669344318,795930.9122923553,801609.9889022845,937868.2154319366
+MBTA Pension Costs,MBTA,Police,Pension Costs,True,782566.5669344318,795930.9122923553,801609.9889022845,937868.2154319362
 DAA Stated Payroll Costs,DAA,Legal,Stated Payroll Costs,False,96072.02186834313,100873.17209833625,105993.30255240748,111841.07895812517
 DAA Hidden Payroll Costs,DAA,Legal,Hidden Payroll Costs,True,2501.9503924044543,-588.4630771079634,731.7683160216678,-1804.4106318644924
 DAA Stated Fringe Costs,DAA,Legal,Stated Fringe Costs,False,0.0,0.0,0.0,0.0
@@ -62,15 +62,15 @@ DAA Hidden Fringe Costs,DAA,Legal,Hidden Fringe Costs,True,38177.31745141885,385
 DAA Stated Capital Costs,DAA,Legal,Stated Capital Costs,False,0.0,0.0,0.0,0.0
 DAA Hidden Capital Costs,DAA,Legal,Hidden Capital Costs,True,0.0,0.0,0.0,0.0
 DAA Non-Payroll Operating Costs,DAA,Legal,Non-Payroll Operating Costs,False,313871.320293664,314850.93167155335,309415.75103704043,322154.351289568
-DAA Pension Costs,DAA,Legal,Pension Costs,True,8886.118284905242,9037.101672842546,10823.384527018257,12822.871383315609
-MA Sheriff's Association Stated Payroll Costs,MA Sheriff's Association,Police,Stated Payroll Costs,False,27942.65578821116,28051.815712941065,28174.50747959671,32646.51740237572
-MA Sheriff's Association Hidden Payroll Costs,MA Sheriff's Association,Police,Hidden Payroll Costs,True,-237.4217073803093,-1163.3930918662145,-232.84256062054538,-6817.337466456401
-MA Sheriff's Association Stated Fringe Costs,MA Sheriff's Association,Police,Stated Fringe Costs,False,0.0,0.0,0.0,0.0
-MA Sheriff's Association Hidden Fringe Costs,MA Sheriff's Association,Police,Hidden Fringe Costs,True,10730.129793003496,10333.618041387484,9995.78852133638,8891.46747759987
-MA Sheriff's Association Stated Capital Costs,MA Sheriff's Association,Police,Stated Capital Costs,False,0.0,0.0,0.0,0.0
-MA Sheriff's Association Hidden Capital Costs,MA Sheriff's Association,Police,Hidden Capital Costs,True,0.0,0.0,0.0,0.0
-MA Sheriff's Association Non-Payroll Operating Costs,MA Sheriff's Association,Police,Non-Payroll Operating Costs,False,12931.648356962034,10265.921750612726,9553.137428834525,9236.761011924344
-MA Sheriff's Association Pension Costs,MA Sheriff's Association,Police,Pension Costs,True,0.0,0.0,0.0,0.0
+DAA Pension Costs,DAA,Legal,Pension Costs,True,8886.118284905242,9037.101672842537,10823.384527018225,12822.871383315456
+MA Sheriff's Association Stated Payroll Costs,MA Sheriff's Association,Jails,Stated Payroll Costs,False,27942.65578821116,28051.815712941065,28174.50747959671,32646.51740237572
+MA Sheriff's Association Hidden Payroll Costs,MA Sheriff's Association,Jails,Hidden Payroll Costs,True,-237.4217073803093,-1163.3930918662145,-232.84256062054538,-6817.337466456401
+MA Sheriff's Association Stated Fringe Costs,MA Sheriff's Association,Jails,Stated Fringe Costs,False,0.0,0.0,0.0,0.0
+MA Sheriff's Association Hidden Fringe Costs,MA Sheriff's Association,Jails,Hidden Fringe Costs,True,10730.129793003496,10333.618041387484,9995.78852133638,8891.46747759987
+MA Sheriff's Association Stated Capital Costs,MA Sheriff's Association,Jails,Stated Capital Costs,False,0.0,0.0,0.0,0.0
+MA Sheriff's Association Hidden Capital Costs,MA Sheriff's Association,Jails,Hidden Capital Costs,True,0.0,0.0,0.0,0.0
+MA Sheriff's Association Non-Payroll Operating Costs,MA Sheriff's Association,Jails,Non-Payroll Operating Costs,False,12931.648356962034,10265.921750612726,9553.137428834525,9236.761011924344
+MA Sheriff's Association Pension Costs,MA Sheriff's Association,Jails,Pension Costs,True,0.0,0.0,0.0,0.0
 Parole_Board Stated Payroll Costs,Parole_Board,Jails,Stated Payroll Costs,False,2302487.315515052,2134167.54153469,2455630.0003586765,2781704.265563117
 Parole_Board Hidden Payroll Costs,Parole_Board,Jails,Hidden Payroll Costs,True,-488.2240280238028,-71576.56405225594,-11313.9436745983,-16850.629922896682
 Parole_Board Stated Fringe Costs,Parole_Board,Jails,Stated Fringe Costs,False,0.0,0.0,0.0,0.0
@@ -78,7 +78,7 @@ Parole_Board Hidden Fringe Costs,Parole_Board,Jails,Hidden Fringe Costs,True,891
 Parole_Board Stated Capital Costs,Parole_Board,Jails,Stated Capital Costs,False,0.0,0.0,0.0,145393.1601553453
 Parole_Board Hidden Capital Costs,Parole_Board,Jails,Hidden Capital Costs,True,0.0,0.0,0.0,0.0
 Parole_Board Non-Payroll Operating Costs,Parole_Board,Jails,Non-Payroll Operating Costs,False,236518.05871758223,194745.42644968588,238387.06608292993,307761.7379438922
-Parole_Board Pension Costs,Parole_Board,Jails,Pension Costs,True,910430.1827609781,929992.5101617089,1160197.3255716104,1306626.2987494378
+Parole_Board Pension Costs,Parole_Board,Jails,Pension Costs,True,910430.1827609781,929992.5101617079,1160197.3255716064,1306626.2987494213
 CJT Stated Payroll Costs,CJT,Police,Stated Payroll Costs,False,428369.41168669076,368961.02432236384,390456.57684061176,419493.1481348373
 CJT Hidden Payroll Costs,CJT,Police,Hidden Payroll Costs,True,-11304.8390282269,11515.083758750085,-15158.284734028102,-13364.593608074005
 CJT Stated Fringe Costs,CJT,Police,Stated Fringe Costs,False,0.0,0.0,0.0,0.0
@@ -94,7 +94,7 @@ Supreme_Judicial_Court Hidden Fringe Costs,Supreme_Judicial_Court,Legal,Hidden F
 Supreme_Judicial_Court Stated Capital Costs,Supreme_Judicial_Court,Legal,Stated Capital Costs,False,31819.796345158335,7910.530592075387,8929.08358680511,0.0
 Supreme_Judicial_Court Hidden Capital Costs,Supreme_Judicial_Court,Legal,Hidden Capital Costs,True,0.0,0.0,0.0,0.0
 Supreme_Judicial_Court Non-Payroll Operating Costs,Supreme_Judicial_Court,Legal,Non-Payroll Operating Costs,False,1054700.3240054096,1059419.836532864,1167231.7700872822,1348087.889817319
-Supreme_Judicial_Court Pension Costs,Supreme_Judicial_Court,Legal,Pension Costs,True,106569.7844505424,107744.15246858144,111576.26563236487,115690.75733636726
+Supreme_Judicial_Court Pension Costs,Supreme_Judicial_Court,Legal,Pension Costs,True,106569.7844505424,107744.15246858132,111576.26563236454,115690.75733636586
 Appeals_Court Stated Payroll Costs,Appeals_Court,Legal,Stated Payroll Costs,False,880862.3275754522,834712.6380082523,886266.4205552271,814175.1745992809
 Appeals_Court Hidden Payroll Costs,Appeals_Court,Legal,Hidden Payroll Costs,True,21801.281181222483,-10615.486658010124,3593.11927085073,-17338.74131470553
 Appeals_Court Stated Fringe Costs,Appeals_Court,Legal,Stated Fringe Costs,False,6858.234277921228,6714.055895114223,6556.826417030228,5840.436507933393
@@ -102,7 +102,15 @@ Appeals_Court Hidden Fringe Costs,Appeals_Court,Legal,Hidden Fringe Costs,True,3
 Appeals_Court Stated Capital Costs,Appeals_Court,Legal,Stated Capital Costs,False,0.0,0.0,0.0,0.0
 Appeals_Court Hidden Capital Costs,Appeals_Court,Legal,Hidden Capital Costs,True,0.0,0.0,0.0,0.0
 Appeals_Court Non-Payroll Operating Costs,Appeals_Court,Legal,Non-Payroll Operating Costs,False,58805.25195069705,35621.12436006871,48738.05790900005,39104.70584400045
-Appeals_Court Pension Costs,Appeals_Court,Legal,Pension Costs,True,229270.8956922996,236354.8240027525,259699.5732907341,236792.7302297092
+Appeals_Court Pension Costs,Appeals_Court,Legal,Pension Costs,True,229270.8956922996,236354.82400275226,259699.5732907333,236792.73022970633
+DYS Stated Payroll Costs,DYS,Jails,Stated Payroll Costs,False,5704453.287237331,6110738.546472089,6241688.660488309,6588155.062855527
+DYS Hidden Payroll Costs,DYS,Jails,Hidden Payroll Costs,True,50671.53417018403,-208009.28348265658,-23966.17274929375,-182187.5194090619
+DYS Stated Fringe Costs,DYS,Jails,Stated Fringe Costs,False,133362.063752801,74512.20459470613,41641.71247748941,37183.5928285455
+DYS Hidden Fringe Costs,DYS,Jails,Hidden Fringe Costs,True,2228937.540411021,2268506.057980695,2224314.093380591,2205197.850509585
+DYS Stated Capital Costs,DYS,Jails,Stated Capital Costs,False,31683.33758966549,146704.7312706627,122000.49748039758,1893.2866695441228
+DYS Hidden Capital Costs,DYS,Jails,Hidden Capital Costs,True,0.0,0.0,0.0,0.0
+DYS Non-Payroll Operating Costs,DYS,Jails,Non-Payroll Operating Costs,False,10605989.8707049,10643026.21476191,10288872.420166744,10001987.971482512
+DYS Pension Costs,DYS,Jails,Pension Costs,True,17238.018642731102,10128.797643459564,1933.1780896056885,1468.0520701793334
 Boston PD Stated Payroll Costs,Boston PD,Police,Stated Payroll Costs,False,317221775.6080403,329323456.28666353,354198570.4529313,368930668.01405525
 Boston PD Hidden Payroll Costs,Boston PD,Police,Hidden Payroll Costs,True,51544043.52833891,57763532.5345878,48756333.326895714,45899408.8334015
 Boston PD Stated Fringe Costs,Boston PD,Police,Stated Fringe Costs,False,120503.0,132926.0,123164.0,101000.0
