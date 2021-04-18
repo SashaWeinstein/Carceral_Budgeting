@@ -76,7 +76,7 @@ def get_agencies(yr=list(range(2016,2020))):
                                                         official_name="SHERIFFS DEPARTMENT ASSOCIATION (SDA)",
                                                         year_range=yr, payroll_vendors=["SDA - SUMMARY PAYROLL"],
                                                         client=client,
-                                                        category="Police",
+                                                        category="Jails",
                                                         correction_function=population_correction)
     out_dict["Parole Board"] = StateAgency(alias="Parole_Board",
                                            official_name="PAROLE BOARD (PAR)",
@@ -100,7 +100,11 @@ def get_agencies(yr=list(range(2016,2020))):
                                             official_name="APPEALS COURT (APC)",
                                             year_range=yr, client=client, category="Legal",
                                             correction_function=appeals_court_correction)
-
+    out_dict["Department of Youth Services"] = StateAgency(alias="DYS",
+                                                           official_name="DEPARTMENT OF YOUTH SERVICES (DYS)",
+                                                           year_range=yr,
+                                                           client=client, category="Jails",
+                                                           correction_function=population_correction)
     out_dict["Boston PD"] = BostonPD(yr)
     out_dict["Chelsea PD"] = ChelseaPD(yr)
     out_dict["Revere PD"] = ReverePD(yr)
