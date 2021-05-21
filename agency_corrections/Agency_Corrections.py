@@ -1,6 +1,11 @@
 """Updated August 6th to add correction for DOC"""
 import pandas as pd
 import numpy as np
+import sys
+helper_dir = "/Users/alexanderweinstein/Documents/Harris/Summer2020/Carceral_Budgeting/Exploratory/Agency_Classes/Agency_Helpers"
+sys.path.insert(0, helper_dir)
+from CY_To_FY import convert_CY_to_FY
+
 
 def all_agency_corrections():
     """Written Dec 27. Returns all corrections used in final version: Trial court, appeals court, DOC, population"""
@@ -74,8 +79,8 @@ def trial_court_suffolk():
     return suff_fraction, df.sum()
 def DOC_correction(df):
     """Data is from https://www.mass.gov/lists/admissions-and-releases"""
-    suffolk_pop_correction = DOC_pcnt_suffolk()
-    criminal_cases_correction = DOC_pcnt_criminal()
+    suffolk_pop_correction, suffolk_count = DOC_pcnt_suffolk()
+    criminal_cases_correction, criminal_pop = DOC_pcnt_criminal()
     return df * (suffolk_pop_correction*criminal_cases_correction)
 
 def DOC_pcnt_suffolk():
@@ -86,13 +91,32 @@ def DOC_pcnt_suffolk():
     df = DOC_pcnt_suffolkf_df()
 
     correction_series = pd.Series()
+    suffolk_count = pd.Series()
+
     for y in list(range(2016, 2020)):
         prev = df.loc[:, (df.columns.str.contains(str(y-1)) & df.columns.str.contains("Q3|Q4"))]
         current = df.loc[:, (df.columns.str.contains(str(y)) & df.columns.str.contains("Q1|Q2"))]
         s = prev.sum(axis=1) + current.sum(axis=1)
         correction_series.loc[y] = s[0] / s[1]
+        suffolk_count.loc[y] = s[0]
 
-    return correction_series
+    return correction_series, suffolk_count
+
+def DOC_pcnt_criminal():
+    pop_df = DOC_pcnt_criminal_df()
+    correction_series = pd.Series()
+    criminal_pop = pd.Series()
+    for y in list(range(2016,2020)):
+        prev = pop_df.loc[:,(pop_df.columns.str.contains(str(y-1)) &
+                             pop_df.columns.str.contains("Q3|Q4"))]
+        current = pop_df.loc[:,(pop_df.columns.str.contains(str(y)) &
+                     pop_df.columns.str.contains("Q1|Q2"))]
+
+        s = prev.sum(axis=1) + current.sum(axis=1)
+        correction_series.loc[y] = 1-( s[0] / s[1])
+        criminal_pop.loc[y] = s[1]/4
+
+    return correction_series, criminal_pop
 
 def DOC_pcnt_suffolkf_df():
     """Uses State Criminally Sentenced New Court Commitments Figure"""
@@ -195,18 +219,6 @@ def DOC_pcnt_criminal_df():
 
     return pop_df
 
-def DOC_pcnt_criminal():
-    pop_df = DOC_pcnt_criminal_df()
-    correction_series = pd.Series()
-    for y in list(range(2016,2020)):
-        prev = pop_df.loc[:,(pop_df.columns.str.contains(str(y-1)) &
-                             pop_df.columns.str.contains("Q3|Q4"))]
-        current = pop_df.loc[:,(pop_df.columns.str.contains(str(y)) &
-                     pop_df.columns.str.contains("Q1|Q2"))]
-
-        s = prev.sum(axis=1) + current.sum(axis=1)
-        correction_series.loc[y] = 1-( s[0] / s[1])
-    return correction_series
 
 def state_police_correction(df):
     """Use dataset of state police civil tickets from FOIA request
@@ -232,10 +244,9 @@ def population_correction(df):
                             data= [756919, 767719, 780685, 791766,798559])
     MA_pop = pd.Series(index=[2015] + yr,
                        data=[6705586, 6742143, 6789319, 6830193, 6865639])
-    correction_by_FY = pd.Series(index=yr)
-    for y in yr:
-        correction_by_FY.loc[y] = np.mean([suffolk_pop.loc[y-1]/MA_pop.loc[y-1],
-                                           suffolk_pop.loc[y]/MA_pop.loc[y]])
+    fraction_by_CY = suffolk_pop/MA_pop
+    correction_by_FY = convert_CY_to_FY(fraction_by_CY, yr)
+
     return df*(correction_by_FY)
 
 def bos_ticket(x):
