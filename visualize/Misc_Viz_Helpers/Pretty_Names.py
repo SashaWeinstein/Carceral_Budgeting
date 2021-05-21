@@ -6,6 +6,9 @@ pretty_agency_names = {"Suffolk_Sheriff": "Suffolk Sheriff",
                 "State_Police":"State Police",
                 "trial_court": "Trial Court"}
 
+pretty_category_names = {"Jails":"Incarceration",
+                         "Legal": "Legal/Courts"}
+
 def Prettify_AN(name):
     """AN stands for agency name"""
     if name in pretty_agency_names.keys():
