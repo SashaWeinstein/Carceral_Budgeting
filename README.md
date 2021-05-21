@@ -20,3 +20,11 @@ Some agencies operate across the entire state of Massachussetts and so only the 
 
 ## Final Results
 Final results are generated with ipython notebook that loops through all agency classes. 
+
+
+## Other Directories
+ - Check implementation has code to double check results
+ - Exploratory has code used in early planning stages, mostly jupyter notebooks
+ - Misc Analyses has code used for questions that came up during analysis not directly related to final result of carceral budgets
+ - Presentations has code used to develop presentations
+ - Visualize includes code to make various plots
